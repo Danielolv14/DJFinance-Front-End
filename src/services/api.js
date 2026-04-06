@@ -58,7 +58,7 @@ export async function getProjecao() {
 }
 
 export async function normalizarLocal(de, para) {
-  const res = await fetch(`http://localhost:8080/shows/normalizar-local`, {
+  const res = await fetch(`${BASE_URL}/shows/normalizar-local`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ de, para }),
@@ -68,7 +68,7 @@ export async function normalizarLocal(de, para) {
 }
 
 export async function normalizarContratante(de, para) {
-  const res = await fetch(`http://localhost:8080/shows/normalizar-contratante`, {
+  const res = await fetch(`${BASE_URL}/shows/normalizar-contratante`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ de, para }),

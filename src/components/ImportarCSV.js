@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'https://djfinance-back-end-production.up.railway.app';
 
 export default function ImportarCSV({ onImportado }) {
   const [loading, setLoading]   = useState(false);
