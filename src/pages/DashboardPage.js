@@ -110,10 +110,25 @@ export default function DashboardPage({ shows }) {
   ];
 
   // ── KPIs ───────────────────────────────────────────────────────────────────
-  const totalBruto    = confirmados.reduce((a,s) => a+(s.cache||110), 0);
-  const totalDaniel   = confirmados.reduce((a,s) => a+((s.cache||110)*0.15+40), 0);
-  const totalYuri     = confirmados.length * 300;
-  const lucroLiquido  = totalBruto - totalDaniel - totalYuri;
+  const INICIO_EQUIPE            = new Date('2025-03-01');
+  const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
+
+  const totalBruto = confirmados.reduce((a,s) => a+(s.cache||0), 0);
+
+  const totalDaniel = confirmados.reduce((a,s) => {
+    const dataShow = new Date(s.data + 'T00:00:00');
+    if (dataShow < INICIO_EQUIPE) return a;
+    if (dataShow < INICIO_PERCENTUAL_DANIEL) return a + 90; // fixo antigo
+    return a + (s.cache||0) * 0.15 + 40;                   // 15% + transporte
+  }, 0);
+
+  const totalYuri = confirmados.reduce((a,s) => {
+    const dataShow = new Date(s.data + 'T00:00:00');
+    if (dataShow < INICIO_EQUIPE) return a;
+    return a + 300;
+  }, 0);
+
+  const lucroLiquido = totalBruto - totalDaniel - totalYuri;
   const melhorMes     = cachePorMes.reduce((a,b) => b.valor > a.valor ? b : a, {label:'—',valor:0});
   const mediaCache    = confirmados.length ? totalBruto/confirmados.length : 0;
 
