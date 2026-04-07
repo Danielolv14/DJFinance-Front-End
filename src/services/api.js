@@ -57,6 +57,27 @@ export async function getProjecao() {
   return res.json();
 }
 
+export async function getBloqueios() {
+  const res = await fetch(`${BASE_URL}/bloqueios`);
+  if (!res.ok) throw new Error('Erro ao buscar bloqueios');
+  return res.json();
+}
+
+export async function createBloqueio(bloqueio) {
+  const res = await fetch(`${BASE_URL}/bloqueios`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bloqueio),
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.mensagem || 'Erro ao criar bloqueio'); }
+  return res.json();
+}
+
+export async function deleteBloqueio(id) {
+  const res = await fetch(`${BASE_URL}/bloqueios/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Erro ao deletar bloqueio');
+}
+
 export async function normalizarLocal(de, para) {
   const res = await fetch(`${BASE_URL}/shows/normalizar-local`, {
     method: 'PUT',

@@ -32,7 +32,17 @@ function calcularDuracao(inicio, termino) {
   return `${h}h${String(m).padStart(2,'0')}min`;
 }
 
-export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao }) {
+function dataBloqueada(data, bloqueios) {
+  if (!data || !bloqueios?.length) return null;
+  const d = new Date(data + 'T00:00:00');
+  return bloqueios.find(b => {
+    const inicio = new Date(b.dataInicio + 'T00:00:00');
+    const fim    = new Date(b.dataFim    + 'T00:00:00');
+    return d >= inicio && d <= fim;
+  }) || null;
+}
+
+export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao, bloqueios = [] }) {
   const editando = !!showParaEditar;
   const [form, setForm]       = useState(VAZIO);
   const [erros, setErros]     = useState({});
@@ -101,6 +111,10 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
     if (!form.data)        e.data        = 'Obrigatório';
     if (!form.evento)      e.evento      = 'Obrigatório';
     if (!form.contratante) e.contratante = 'Obrigatório';
+    const bloqueio = dataBloqueada(form.data, bloqueios);
+    if (bloqueio) {
+      e.data = `Data bloqueada${bloqueio.motivo ? ': ' + bloqueio.motivo : ''}`;
+    }
     return e;
   }
 
