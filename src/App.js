@@ -6,7 +6,7 @@ import CalendarioPage  from './pages/CalendarioPage';
 import CRMPage         from './pages/CRMPage';
 import FechamentoMensal from './components/FechamentoMensal';
 import ImportarCSV     from './components/ImportarCSV';
-import { getShows }    from './services/api';
+import { getShows, getBloqueios } from './services/api';
 import './App.css';
 
 const ABAS = [
@@ -21,6 +21,7 @@ const ABAS = [
 export default function App() {
   const [aba, setAba]                       = useState('dashboard');
   const [shows, setShows]                   = useState([]);
+  const [bloqueios, setBloqueios]           = useState([]);
   const [showParaEditar, setShowParaEditar] = useState(null);
   const [loading, setLoading]               = useState(false);
 
@@ -31,7 +32,12 @@ export default function App() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { carregarShows(); }, [carregarShows]);
+  const carregarBloqueios = useCallback(async () => {
+    try { setBloqueios(await getBloqueios()); }
+    catch (err) { console.error(err); }
+  }, []);
+
+  useEffect(() => { carregarShows(); carregarBloqueios(); }, [carregarShows, carregarBloqueios]);
 
   function handleEditar(show) {
     setShowParaEditar(show);
@@ -71,7 +77,7 @@ export default function App() {
 
       <main className="main">
         {aba === 'dashboard'  && <DashboardPage  shows={shows} />}
-        {aba === 'calendario' && <CalendarioPage shows={shows} />}
+        {aba === 'calendario' && <CalendarioPage shows={shows} bloqueios={bloqueios} onBloqueioAtualizado={carregarBloqueios} />}
         {aba === 'visao'      && (
           <VisaoGeralPage shows={shows} loading={loading}
             onEditar={handleEditar} onAtualizar={carregarShows} />
@@ -84,6 +90,7 @@ export default function App() {
               onShowSalvo={handleShowSalvo}
               showParaEditar={showParaEditar}
               onCancelarEdicao={() => setShowParaEditar(null)}
+              bloqueios={bloqueios}
             />
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import BloqueioAgenda from '../components/BloqueioAgenda';
 
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -9,11 +10,12 @@ function moeda(v) {
   return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
 }
 
-export default function CalendarioPage({ shows }) {
+export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtualizado }) {
   const hoje      = new Date();
   const [mes, setMes]   = useState(hoje.getMonth());
   const [ano, setAno]   = useState(hoje.getFullYear());
   const [showSel, setShowSel] = useState(null);
+  const [mostrarBloqueio, setMostrarBloqueio] = useState(false);
 
   function navegar(delta) {
     let novoMes = mes + delta;
@@ -40,6 +42,21 @@ export default function CalendarioPage({ shows }) {
     });
     return map;
   }, [showsDoMes]);
+
+  // Dias bloqueados no mês atual
+  const diasBloqueados = useMemo(() => {
+    const set = new Set();
+    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    bloqueios.forEach(b => {
+      const inicio = new Date(b.dataInicio + 'T00:00:00');
+      const fim    = new Date(b.dataFim    + 'T00:00:00');
+      for (let d = 1; d <= diasNoMes; d++) {
+        const dia = new Date(ano, mes, d);
+        if (dia >= inicio && dia <= fim) set.add(d);
+      }
+    });
+    return set;
+  }, [bloqueios, mes, ano]);
 
   // Gerar células do calendário
   const primeiroDia   = new Date(ano, mes, 1).getDay();
@@ -68,12 +85,25 @@ export default function CalendarioPage({ shows }) {
           <h1 className="page-title">📅 Calendário</h1>
           <p className="page-subtitle">{showsDoMes.length} show{showsDoMes.length!==1?'s':''} em {MESES_FULL[mes]} / {ano}</p>
         </div>
-        <div className="cal-nav">
-          <button className="cal-nav-btn" onClick={() => navegar(-1)}>←</button>
-          <span className="cal-mes-label">{MESES_FULL[mes]} {ano}</span>
-          <button className="cal-nav-btn" onClick={() => navegar(1)}>→</button>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            className={'btn btn-sm ' + (mostrarBloqueio ? 'btn-danger' : 'btn-ghost')}
+            onClick={() => setMostrarBloqueio(v => !v)}
+          >
+            🔒 {mostrarBloqueio ? 'Fechar' : 'Travar Agenda'}
+          </button>
+          <div className="cal-nav">
+            <button className="cal-nav-btn" onClick={() => navegar(-1)}>←</button>
+            <span className="cal-mes-label">{MESES_FULL[mes]} {ano}</span>
+            <button className="cal-nav-btn" onClick={() => navegar(1)}>→</button>
+          </div>
         </div>
       </div>
+
+      {/* PAINEL DE BLOQUEIO */}
+      {mostrarBloqueio && (
+        <BloqueioAgenda bloqueios={bloqueios} onAtualizar={onBloqueioAtualizado} />
+      )}
 
       {/* MINI KPIs */}
       <div className="cal-kpis">
@@ -95,6 +125,12 @@ export default function CalendarioPage({ shows }) {
           </span>
           <span className="cal-kpi-label">Pendentes</span>
         </div>
+        {diasBloqueados.size > 0 && (
+          <div className="cal-kpi">
+            <span className="cal-kpi-num" style={{color:'var(--red)'}}>{diasBloqueados.size}</span>
+            <span className="cal-kpi-label">Dias bloqueados</span>
+          </div>
+        )}
       </div>
 
       <div className="cal-layout">
@@ -114,14 +150,24 @@ export default function CalendarioPage({ shows }) {
               if (!dia) return <div key={i} className="cal-celula cal-vazia" />;
               const showsDia  = showsPorDia[dia] || [];
               const temShow   = showsDia.length > 0;
+              const bloqueado = diasBloqueados.has(dia);
               const ativo     = showSel && showsDia.find(s => s.id === showSel.id);
               return (
                 <div
                   key={i}
-                  className={'cal-celula' + (isHoje(dia)?' cal-hoje':'') + (temShow?' cal-tem-show':'') + (ativo?' cal-ativo':'')}
+                  className={
+                    'cal-celula' +
+                    (isHoje(dia)   ? ' cal-hoje'    : '') +
+                    (temShow       ? ' cal-tem-show' : '') +
+                    (bloqueado     ? ' cal-bloqueado': '') +
+                    (ativo         ? ' cal-ativo'    : '')
+                  }
                   onClick={() => temShow ? setShowSel(showsDia[0]) : setShowSel(null)}
                 >
                   <span className="cal-dia-num">{dia}</span>
+                  {bloqueado && !temShow && (
+                    <div className="cal-lock-icon">🔒</div>
+                  )}
                   {showsDia.slice(0,3).map((s,j) => (
                     <div key={j} className="cal-evento-pill"
                       style={{background: STATUS_COR[s.status]||'var(--accent)', opacity:0.85}}>
