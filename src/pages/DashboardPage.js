@@ -150,6 +150,7 @@ export default function DashboardPage({ shows }) {
 
   const INICIO_EQUIPE            = new Date('2025-03-01');
   const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
+  const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
 
   const showsAno     = useMemo(() => shows.filter(s => s.ano === Number(anoSel)), [shows, anoSel]);
   const confirmados  = useMemo(() => showsAno.filter(s => s.status === 'CONFIRMADO'), [showsAno]);
@@ -162,7 +163,8 @@ export default function DashboardPage({ shows }) {
     const d = new Date(s.data + 'T00:00:00');
     if (d < INICIO_EQUIPE) return a;
     if (d < INICIO_PERCENTUAL_DANIEL) return a + 90;
-    return a + (s.cache || 0) * 0.15 + 40;
+    const pct = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
+    return a + (s.cache || 0) * pct + 40;
   }, 0);
 
   const totalYuri = confirmados.reduce((a, s) => {
