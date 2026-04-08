@@ -3,10 +3,28 @@ import { useState, useRef } from 'react';
 const BASE_URL = 'https://djfinance-back-end-production.up.railway.app';
 
 export default function ImportarCSV({ onImportado }) {
-  const [loading, setLoading]   = useState(false);
-  const [resultado, setResultado] = useState(null);
-  const [erro, setErro]         = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [resultado, setResultado]   = useState(null);
+  const [erro, setErro]             = useState('');
+  const [limpando, setLimpando]     = useState(false);
+  const [msgLimpeza, setMsgLimpeza] = useState('');
   const inputRef = useRef();
+
+  async function handleLimparDuplicados() {
+    if (!window.confirm('Remover todos os shows duplicados? Será mantido apenas o primeiro registro de cada show (mesma data + mesmo evento).')) return;
+    setLimpando(true);
+    setMsgLimpeza('');
+    try {
+      const res = await fetch(`${BASE_URL}/shows/duplicados`, { method: 'DELETE' });
+      const data = await res.json();
+      setMsgLimpeza(data.mensagem);
+      onImportado();
+    } catch (err) {
+      setMsgLimpeza('Erro ao limpar duplicados: ' + err.message);
+    } finally {
+      setLimpando(false);
+    }
+  }
 
   async function handleArquivo(e) {
     const arquivo = e.target.files[0];
@@ -73,6 +91,20 @@ export default function ImportarCSV({ onImportado }) {
       {erro && (
         <div className="alert alert-erro" style={{marginTop: 12}}>❌ {erro}</div>
       )}
+
+      <div style={{marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12}}>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={handleLimparDuplicados}
+          disabled={limpando}
+          title="Remove shows duplicados mantendo apenas o primeiro registro"
+        >
+          {limpando ? '⏳ Limpando...' : '🧹 Remover Duplicados'}
+        </button>
+        {msgLimpeza && (
+          <div className="alert alert-sucesso" style={{marginTop: 8}}>✅ {msgLimpeza}</div>
+        )}
+      </div>
     </div>
   );
 }
