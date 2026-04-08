@@ -56,7 +56,7 @@ export default function App() {
         <div className="header-inner">
           <div className="logo">
             <span className="logo-icon">🎧</span>
-            <span className="logo-text">DRUDS</span>
+            <span className="logo-text">DJFinance</span>
             <span className="logo-sub">Financeiro</span>
           </div>
           <nav className="nav">
