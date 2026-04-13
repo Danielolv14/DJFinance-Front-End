@@ -163,8 +163,9 @@ export default function DashboardPage({ shows }) {
     const d = new Date(s.data + 'T00:00:00');
     if (d < INICIO_EQUIPE) return a;
     if (d < INICIO_PERCENTUAL_DANIEL) return a + 90;
-    const pct = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
-    return a + (s.cache || 0) * pct + 40;
+    const pct  = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
+    const base = (s.cache || 0) - (s.custos || 0);
+    return a + (base > 0 ? base * pct : 0) + 40;
   }, 0);
 
   const totalYuri = confirmados.reduce((a, s) => {
