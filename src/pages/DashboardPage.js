@@ -1,171 +1,310 @@
 import { useMemo, useState, useEffect } from 'react';
+import {
+  AreaChart, Area,
+  BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell,
+} from 'recharts';
 import { getProjecao } from '../services/api';
 import '../dashboard.css';
 
+/* ── Constants ─────────────────────────────────────────────────────────── */
 const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESES_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+/* ── Formatters ─────────────────────────────────────────────────────────── */
 function moeda(v) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 }
-
+function moedaCurta(v) {
+  if (v >= 1000) return `R$${(v / 1000).toFixed(1)}k`;
+  return `R$${Math.round(v)}`;
+}
 function pct(a, b) {
   if (!b) return null;
   return Math.round(((a - b) / b) * 100);
 }
 
-// ── Glow Line Chart ─────────────────────────────────────────────────────────
-function GlowLineChart({ dados, altura = 180, cor = '#a855f7', corSecundaria = '#22d3ee' }) {
-  const max = Math.max(...dados.map(d => d.valor), 1);
-  const pts = dados.map((d, i) => {
-    const x = (i / (dados.length - 1)) * 100;
-    const y = 100 - (d.valor / max) * 88;
-    return { x, y, ...d };
-  });
-  const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
-  const [hovered, setHovered] = useState(null);
+/* ══════════════════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+   ══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Allen Screw ── */
+function Screw({ pos }) {
+  return <div className={`sw-screw sw-screw-${pos}`} />;
+}
+
+/* ── Segmented VU Meter ── */
+const VU_SEGS = 13;
+function vuClass(segIdx, litCount) {
+  if (segIdx >= litCount) return 'sw-vu-seg';
+  if (segIdx <= 4)  return 'sw-vu-seg on-green';
+  if (segIdx <= 6)  return 'sw-vu-seg on-yellow';
+  if (segIdx <= 7)  return 'sw-vu-seg on-orange';
+  return 'sw-vu-seg on-red';
+}
+function VuMeter({ value, max, color }) {
+  const litCount = max > 0 ? Math.round((value / max) * VU_SEGS) : 0;
   return (
-    <div className="dj-chart-wrap" style={{ height: altura }}>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        <defs>
-          <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={cor} stopOpacity="0.35" />
-            <stop offset="100%" stopColor={cor} stopOpacity="0" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
-            <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <polygon points={`0,100 ${polyline} 100,100`} fill="url(#glowGrad)" />
-        <polyline points={polyline} fill="none" stroke={cor} strokeWidth="1.8"
-          vectorEffect="non-scaling-stroke" filter="url(#glow)" />
-        {pts.map((p, i) => (
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r="3" fill="transparent" vectorEffect="non-scaling-stroke"
-              style={{ cursor: 'pointer' }}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)} />
-            {p.valor > 0 && (
-              <circle cx={p.x} cy={p.y} r={hovered === i ? "2.2" : "1.4"}
-                fill={hovered === i ? corSecundaria : cor}
-                vectorEffect="non-scaling-stroke"
-                style={{ transition: 'r 0.15s' }} />
-            )}
-            {hovered === i && p.valor > 0 && (
-              <g>
-                <rect x={p.x - 14} y={p.y - 10} width="28" height="8" rx="2"
-                  fill="#1a0533" stroke={cor} strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                <text x={p.x} y={p.y - 4} textAnchor="middle" fontSize="4"
-                  fill={cor} fontFamily="DM Mono, monospace">
-                  {moeda(p.valor).replace('R$\u00a0', '')}
-                </text>
-              </g>
-            )}
-          </g>
-        ))}
-      </svg>
-      <div className="dj-chart-labels">
-        {dados.map((d, i) => <span key={i} className={d.valor > 0 ? 'dj-chart-label-active' : ''}>{d.label}</span>)}
+    <div className="sw-vu-col" style={{ width: 14, height: 120, padding: '2px 0' }}>
+      {Array.from({ length: VU_SEGS }, (_, i) => {
+        let cls = color ? 'sw-vu-seg' : vuClass(i, litCount);
+        const lit = i < litCount;
+        return (
+          <div
+            key={i}
+            className={cls}
+            style={color && lit ? {
+              background: color,
+              boxShadow: `0 0 5px ${color}99, 0 0 1px ${color}`,
+            } : undefined}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Custom Tooltip (Recharts) ── */
+function ChartTooltip({ active, payload, label, formatter }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="sw-tooltip">
+      <div className="sw-tooltip-label">{label}</div>
+      {payload.map((p, i) => (
+        <div key={i} className="sw-tooltip-val" style={{ color: p.color || 'var(--sw-text1)' }}>
+          {formatter ? formatter(p.value) : moeda(p.value)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Waveform Area Chart (Faturamento Mensal) ── */
+function WaveformChart({ dados }) {
+  return (
+    <div className="sw-lcd" style={{ padding: '14px 6px 4px' }}>
+      <div className="sw-chart-wrapper" style={{ position: 'relative', zIndex: 2 }}>
+        <ResponsiveContainer width="100%" height={160}>
+          <AreaChart data={dados} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="areaBlue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="#1A6EFA" stopOpacity=".25" />
+                <stop offset="100%" stopColor="#1A6EFA" stopOpacity="0"   />
+              </linearGradient>
+              <linearGradient id="areaOrange" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="#FF9F0A" stopOpacity=".18" />
+                <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0"   />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="4 4"
+              stroke="rgba(0,0,0,.07)"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: '#A8AAB6', fontSize: 9, fontFamily: 'JetBrains Mono,monospace' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tickFormatter={moedaCurta}
+              tick={{ fill: '#A8AAB6', fontSize: 9, fontFamily: 'JetBrains Mono,monospace' }}
+              axisLine={false}
+              tickLine={false}
+              width={36}
+            />
+            <Tooltip content={<ChartTooltip />} />
+            {/* Orange area (lucro) — behind */}
+            <Area
+              type="monotone"
+              dataKey="lucro"
+              stroke="#FF9F0A"
+              strokeWidth={1.5}
+              strokeOpacity={0.6}
+              fill="url(#areaOrange)"
+              dot={false}
+              activeDot={{ r: 4, fill: '#FF9F0A', stroke: 'white', strokeWidth: 2 }}
+            />
+            {/* Blue area (cache) — main, in front */}
+            <Area
+              type="monotone"
+              dataKey="valor"
+              stroke="#1A6EFA"
+              strokeWidth={2}
+              fill="url(#areaBlue)"
+              dot={{ r: 3, fill: 'white', stroke: '#1A6EFA', strokeWidth: 1.8 }}
+              activeDot={{ r: 5, fill: '#1A6EFA', stroke: 'white', strokeWidth: 2 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
 }
 
-// ── Bar Chart ────────────────────────────────────────────────────────────────
-function NeonBarChart({ dados, altura = 100 }) {
-  const max = Math.max(...dados.map(d => d.valor), 1);
+/* ── Fader Bar Chart (Gigs por Mês) ── */
+function FaderBarChart({ dados, mesAtual }) {
+  const max = Math.max(...dados.map(d => d.confirmado + d.pendente), 1);
   return (
-    <div className="dj-barchart">
-      {dados.map((d, i) => {
-        const h = max > 0 ? Math.max((d.valor / max) * 100, d.valor > 0 ? 8 : 0) : 0;
-        return (
-          <div key={i} className="dj-bar-col" style={{ height: altura }}>
-            <div className="dj-bar-track">
-              <div className="dj-bar-fill" style={{ height: `${h}%`, opacity: d.valor > 0 ? 1 : 0.15 }} />
+    <div className="sw-lcd" style={{ padding: '12px 10px 10px' }}>
+      <div style={{ display: 'flex', gap: 8, height: 110, alignItems: 'flex-end' }}>
+        {dados.map((d, i) => {
+          const isAtual   = i === mesAtual - 1;
+          const isVazio   = d.confirmado === 0 && d.pendente === 0;
+          const hConf     = max > 0 ? (d.confirmado / max) * 90 : 0;
+          const hPend     = max > 0 ? (d.pendente   / max) * 90 : 0;
+          const total     = d.confirmado + d.pendente;
+          return (
+            <div
+              key={i}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+              className={isAtual ? 'sw-fader-active' : ''}
+            >
+              {/* value label */}
+              <div style={{
+                fontFamily: "'JetBrains Mono',monospace",
+                fontSize: 10,
+                fontWeight: isAtual ? 800 : 700,
+                color: isAtual ? 'var(--sw-blue)' : isVazio ? 'var(--sw-text3)' : 'var(--sw-text2)',
+              }}>
+                {isVazio ? '—' : total}
+              </div>
+              {/* track */}
+              <div
+                className="sw-fader-track"
+                style={{
+                  width: '100%', height: 90,
+                  ...(isAtual ? {
+                    boxShadow: 'inset 2px 2px 5px rgba(0,0,0,.14),inset -1px -1px 3px rgba(255,255,255,.5),0 0 0 1.5px var(--sw-blue),0 0 12px rgba(26,110,250,.25)',
+                  } : {}),
+                }}
+              >
+                {/* pending fill (striped) */}
+                {d.pendente > 0 && (
+                  <div className="sw-fader-fill sw-fader-fill-pending" style={{ height: `${hPend}%`, bottom: `${hConf}%` }} />
+                )}
+                {/* confirmed fill */}
+                {d.confirmado > 0 && (
+                  <div className="sw-fader-fill sw-fader-fill-solid" style={{ height: `${hConf}%` }} />
+                )}
+              </div>
+              {/* month label */}
+              <div style={{
+                fontSize: 8,
+                fontWeight: isAtual ? 700 : 600,
+                letterSpacing: '.06em',
+                textTransform: 'uppercase',
+                color: isAtual ? 'var(--sw-blue)' : 'var(--sw-text3)',
+              }}>
+                {MESES_LABEL[i]}
+              </div>
             </div>
-            <span className="dj-bar-label">{d.label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Heatmap mensal ───────────────────────────────────────────────────────────
-function HeatMap({ showsPorMes, max }) {
-  return (
-    <div className="dj-heatmap">
-      {MESES_LABEL.map((label, i) => {
-        const val = showsPorMes[i] || 0;
-        const intensity = max > 0 ? val / max : 0;
-        return (
-          <div key={i} className="dj-heat-cell" title={`${MESES_FULL[i]}: ${val} show${val !== 1 ? 's' : ''}`}
-            style={{ '--heat': intensity }}>
-            <span className="dj-heat-val">{val > 0 ? val : ''}</span>
-            <span className="dj-heat-label">{label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Insight Card ─────────────────────────────────────────────────────────────
-function InsightCard({ emoji, titulo, texto, tipo = 'neutro' }) {
-  return (
-    <div className={`dj-insight dj-insight-${tipo}`}>
-      <span className="dj-insight-emoji">{emoji}</span>
-      <div>
-        <div className="dj-insight-titulo">{titulo}</div>
-        <div className="dj-insight-texto">{texto}</div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ── Badge de variação ────────────────────────────────────────────────────────
+/* ── Stacked Composition Bar ── */
+function StackedBar({ segments }) {
+  const total = segments.reduce((a, s) => a + s.value, 0);
+  return (
+    <div>
+      {/* Bar */}
+      <div className="sw-inset" style={{ height: 32, display: 'flex', overflow: 'hidden', marginBottom: 8 }}>
+        {segments.map((s, i) => {
+          const w = total > 0 ? (s.value / total) * 100 : 0;
+          return w > 0 ? (
+            <div key={i} style={{
+              width: `${w}%`,
+              background: s.gradient,
+              boxShadow: i === 0 ? 'inset 0 1px 0 rgba(255,255,255,.25)' : undefined,
+              transition: 'width .6s ease',
+            }} />
+          ) : null;
+        })}
+      </div>
+      {/* Scale */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        fontSize: 9, color: 'var(--sw-text3)',
+        fontFamily: "'JetBrains Mono',monospace",
+        marginBottom: 14,
+      }}>
+        {['0%','25%','50%','75%','100%'].map(l => <span key={l}>{l}</span>)}
+      </div>
+    </div>
+  );
+}
+
+/* ── Knob ── */
+function Knob({ color, rotate = 0, label }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+      <div className={`sw-knob sw-knob-${color}`}>
+        <div
+          className="sw-knob-indicator"
+          style={{ transform: `translateX(-50%) rotate(${rotate}deg)`, transformOrigin: '50% 100%' }}
+        />
+      </div>
+      <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--sw-text3)' }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+/* ── Delta badge ── */
 function DeltaBadge({ delta }) {
   if (delta === null || delta === undefined) return null;
   const up = delta >= 0;
   return (
-    <span className={`dj-delta ${up ? 'dj-delta-up' : 'dj-delta-down'}`}>
-      {up ? '↑' : '↓'} {Math.abs(delta)}%
+    <span className={`sw-badge ${up ? 'sw-badge-up' : 'sw-badge-down'}`}>
+      {up ? '▲' : '▼'} {Math.abs(delta)}% vs anterior
     </span>
   );
 }
 
-// ── Dashboard principal ──────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   MAIN DASHBOARD
+   ══════════════════════════════════════════════════════════════════════════ */
 export default function DashboardPage({ shows }) {
-  const hoje = new Date();
+  const hoje     = new Date();
   const mesAtual = hoje.getMonth() + 1;
   const anoAtual = hoje.getFullYear();
 
-  const anos = useMemo(() => [...new Set(shows.map(s => s.ano).filter(Boolean))].sort((a, b) => b - a), [shows]);
+  const anos = useMemo(
+    () => [...new Set(shows.map(s => s.ano).filter(Boolean))].sort((a, b) => b - a),
+    [shows]
+  );
   const [anoSel, setAnoSel] = useState(() => anoAtual);
   const [projecao, setProjecao] = useState([]);
 
   useEffect(() => { getProjecao().then(setProjecao).catch(console.error); }, [shows]);
 
+  /* ── Business rules ── */
   const INICIO_EQUIPE            = new Date('2025-03-01');
   const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
   const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
 
-  const showsAno     = useMemo(() => shows.filter(s => s.ano === Number(anoSel)), [shows, anoSel]);
-  const confirmados  = useMemo(() => showsAno.filter(s => s.status === 'CONFIRMADO'), [showsAno]);
-  const pendentes    = useMemo(() => showsAno.filter(s => s.status === 'PENDENTE'), [showsAno]);
+  const showsAno    = useMemo(() => shows.filter(s => s.ano === Number(anoSel)), [shows, anoSel]);
+  const confirmados = useMemo(() => showsAno.filter(s => s.status === 'CONFIRMADO'), [showsAno]);
+  const pendentes   = useMemo(() => showsAno.filter(s => s.status === 'PENDENTE'),   [showsAno]);
 
-  // KPIs financeiros
+  /* ── KPI calculations ── */
   const totalBruto = confirmados.reduce((a, s) => a + (s.cache || 0), 0);
+  const totalCustos = confirmados.reduce((a, s) => a + (s.custos || 0), 0);
 
   const totalDaniel = confirmados.reduce((a, s) => {
     const d = new Date(s.data + 'T00:00:00');
-    if (d < INICIO_EQUIPE) return a;
+    if (d < INICIO_EQUIPE)            return a;
     if (d < INICIO_PERCENTUAL_DANIEL) return a + 90;
-    const pct  = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
+    const p    = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
     const base = (s.cache || 0) - (s.custos || 0);
-    return a + (base > 0 ? base * pct : 0) + 40;
+    return a + (base > 0 ? base * p : 0) + 40;
   }, 0);
 
   const totalYuri = confirmados.reduce((a, s) => {
@@ -174,35 +313,54 @@ export default function DashboardPage({ shows }) {
     return a + 300;
   }, 0);
 
-  const lucroLiquido = totalBruto - totalDaniel - totalYuri;
-  const mediaCache   = confirmados.length ? totalBruto / confirmados.length : 0;
+  const lucroLiquido  = totalBruto - totalDaniel - totalYuri - totalCustos;
+  const mediaCache    = confirmados.length ? totalBruto / confirmados.length : 0;
   const granaAReceber = pendentes.reduce((a, s) => a + (s.cache || 0), 0);
 
-  // Por mês
+  /* ── Por mês ── */
   const cachePorMes = useMemo(() => {
     const map = Array(12).fill(0);
     confirmados.forEach(s => { if (s.mes) map[s.mes - 1] += (s.cache || 0); });
     return MESES_LABEL.map((label, i) => ({ label, valor: Math.round(map[i]) }));
   }, [confirmados]);
 
-  const showsPorMesArr = useMemo(() => {
+  const lucroPorMes = useMemo(() => {
     const map = Array(12).fill(0);
-    showsAno.forEach(s => { if (s.mes) map[s.mes - 1]++; });
-    return map;
-  }, [showsAno]);
+    confirmados.forEach(s => {
+      if (!s.mes) return;
+      const d = new Date(s.data + 'T00:00:00');
+      const p = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
+      const base = (s.cache || 0) - (s.custos || 0);
+      const daniel = d < INICIO_EQUIPE ? 0 : d < INICIO_PERCENTUAL_DANIEL ? 90 : (base > 0 ? base * p : 0) + 40;
+      const yuri = d < INICIO_EQUIPE ? 0 : 300;
+      map[s.mes - 1] += (s.cache || 0) - daniel - yuri - (s.custos || 0);
+    });
+    return MESES_LABEL.map((label, i) => ({ label, lucro: Math.max(Math.round(map[i]), 0) }));
+  }, [confirmados]);
 
-  const showsPorMesChart = MESES_LABEL.map((label, i) => ({ label, valor: showsPorMesArr[i] }));
-  const maxShowsMes = Math.max(...showsPorMesArr, 1);
+  /* Merge cache + lucro por mês para o waveform */
+  const waveformData = useMemo(() =>
+    cachePorMes.map((d, i) => ({ ...d, lucro: lucroPorMes[i].lucro })),
+    [cachePorMes, lucroPorMes]
+  );
 
-  // Melhor mês
-  const melhorMes = cachePorMes.reduce((a, b) => b.valor > a.valor ? b : a, { label: '—', valor: 0 });
+  /* ── Gigs por mês ── */
+  const gigsPorMes = useMemo(() => {
+    const conf = Array(12).fill(0);
+    const pend = Array(12).fill(0);
+    confirmados.forEach(s => { if (s.mes) conf[s.mes - 1]++; });
+    pendentes.forEach(s =>   { if (s.mes) pend[s.mes - 1]++; });
+    return MESES_LABEL.map((label, i) => ({
+      label, confirmado: conf[i], pendente: pend[i],
+    }));
+  }, [confirmados, pendentes]);
 
-  // Variação mês atual vs mês anterior
-  const cachesMesAtual  = cachePorMes[mesAtual - 1]?.valor || 0;
+  /* ── Variação mês atual ── */
+  const cachesMesAtual    = cachePorMes[mesAtual - 1]?.valor || 0;
   const cachesMesAnterior = cachePorMes[mesAtual - 2]?.valor || 0;
   const deltaMes = pct(cachesMesAtual, cachesMesAnterior);
 
-  // Top contratantes
+  /* ── Top contratantes ── */
   const topContratantes = useMemo(() => {
     const map = {};
     showsAno.forEach(s => {
@@ -214,230 +372,366 @@ export default function DashboardPage({ shows }) {
     return Object.entries(map).sort((a, b) => b[1].shows - a[1].shows).slice(0, 5);
   }, [showsAno]);
 
-  // Últimos shows confirmados
+  /* ── Últimos shows ── */
   const ultimosShows = useMemo(() =>
-    [...confirmados]
-      .sort((a, b) => new Date(b.data) - new Date(a.data))
-      .slice(0, 5),
-    [confirmados]);
+    [...confirmados].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 5),
+    [confirmados]
+  );
 
-  // Insights calculados
-  const insights = useMemo(() => {
-    const lista = [];
+  /* ── VU meter refs ── */
+  const vuMaxBruto = Math.max(totalBruto, granaAReceber, 1000);
 
-    if (deltaMes !== null && deltaMes > 0) {
-      lista.push({ emoji: '📈', tipo: 'positivo', titulo: `Faturamento subiu ${deltaMes}%`, texto: `Você faturou mais este mês do que no mês anterior. Bom ritmo!` });
-    } else if (deltaMes !== null && deltaMes < 0) {
-      lista.push({ emoji: '📉', tipo: 'negativo', titulo: `Faturamento caiu ${Math.abs(deltaMes)}%`, texto: `Este mês ficou abaixo do anterior. Hora de fechar mais gigs.` });
-    }
+  /* ── Composition segments ── */
+  const composicaoSegments = [
+    { value: lucroLiquido > 0 ? lucroLiquido : 0, gradient: 'linear-gradient(90deg,#1A6EFA,#4D92FF)', label: 'DJ' },
+    { value: totalDaniel,   gradient: 'linear-gradient(90deg,#FF9F0A,#FFBA45)', label: 'Daniel' },
+    { value: totalYuri,     gradient: 'linear-gradient(90deg,#28CD41,#5AE07A)', label: 'Yuri' },
+    { value: totalCustos,   gradient: 'linear-gradient(90deg,#FF3B2F,#FF6B61)', label: 'Custos' },
+  ];
 
-    if (topContratantes.length > 0) {
-      const [nome, dados] = topContratantes[0];
-      lista.push({ emoji: '🏆', tipo: 'positivo', titulo: `Seu contratante mais fiel: ${nome}`, texto: `${dados.shows} shows fechados — ${moeda(dados.cache)} gerados` });
-    }
+  /* ── Colors for ranking ── */
+  const rankColors = ['var(--sw-blue)','var(--sw-orange)','var(--sw-purple)','var(--sw-yellow)','var(--sw-text2)'];
 
-    if (melhorMes.valor > 0) {
-      lista.push({ emoji: '🔥', tipo: 'destaque', titulo: `${melhorMes.label} foi o mês mais insano`, texto: `${moeda(melhorMes.valor)} em cache — seu pico em ${anoSel}` });
-    }
-
-    if (granaAReceber > 0) {
-      lista.push({ emoji: '💸', tipo: 'alerta', titulo: `${moeda(granaAReceber)} ainda a receber`, texto: `${pendentes.length} show${pendentes.length !== 1 ? 's' : ''} confirmado${pendentes.length !== 1 ? 's' : ''} aguardando pagamento` });
-    }
-
-    if (mediaCache > 0) {
-      lista.push({ emoji: '🎯', tipo: 'neutro', titulo: `Cache médio de ${moeda(mediaCache)} por set`, texto: `Baseado nos ${confirmados.length} sets realizados em ${anoSel}` });
-    }
-
-    return lista.slice(0, 3);
-  }, [deltaMes, topContratantes, melhorMes, granaAReceber, pendentes, confirmados, anoSel, mediaCache]);
-
+  /* ═══════════════════════════════════════════════════════════════════════
+     RENDER
+     ══════════════════════════════════════════════════════════════════════ */
   return (
     <div className="dj-dash">
 
-      {/* ── HEADER ── */}
-      <div className="dj-dash-header">
-        <div>
-          <h1 className="dj-dash-title">Dashboard</h1>
-          <p className="dj-dash-sub">Visão completa da sua carreira em {anoSel}</p>
+      {/* ══ PANEL 1: FATURAMENTO KPIs ══ */}
+      <div className="sw-panel" style={{ padding: '26px 28px 22px' }}>
+        <Screw pos="tl" /><Screw pos="tr" /><Screw pos="bl" /><Screw pos="br" />
+
+        {/* Panel header */}
+        <div className="sw-panel-head">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span className="sw-engrave">MÓDULO</span>
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-.01em' }}>
+              Faturamento · {MESES_FULL[mesAtual - 1]} {anoSel}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="sw-engrave">REV 3.0</span>
+            {/* Year selector */}
+            <div className="sw-seg-ctrl">
+              {anos.map(a => (
+                <button
+                  key={a}
+                  className={`sw-seg-btn${anoSel === a ? ' active' : ''}`}
+                  onClick={() => setAnoSel(a)}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <select className="dj-ano-select" value={anoSel} onChange={e => setAnoSel(Number(e.target.value))}>
-          {anos.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
+
+        {/* 4 KPI Cards */}
+        <div className="sw-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+
+          {/* 1 · Faturamento Bruto */}
+          <div className="sw-kpi-card">
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: 'var(--sw-blue)', borderRadius: '18px 18px 0 0',
+              boxShadow: '0 0 8px rgba(26,110,250,.6)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div className="sw-hw-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M3 12V8M6 12V5M9 12V7M12 12V3"/>
+                  </svg>
+                </div>
+                <div className="sw-kpi-val">{moeda(totalBruto)}</div>
+                <div className="sw-kpi-label">Faturamento Bruto</div>
+                <DeltaBadge delta={deltaMes} />
+              </div>
+              <VuMeter value={totalBruto} max={vuMaxBruto} />
+            </div>
+          </div>
+
+          {/* 2 · Lucro Líquido */}
+          <div className="sw-kpi-card">
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: 'var(--sw-green)', borderRadius: '18px 18px 0 0',
+              boxShadow: '0 0 8px rgba(40,205,65,.6)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div className="sw-hw-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <rect x="2" y="4" width="12" height="9" rx="1.5"/>
+                    <path d="M8 7v3M6.5 8.5h3"/>
+                  </svg>
+                </div>
+                <div className="sw-kpi-val" style={{ color: '#1A8C36' }}>{moeda(lucroLiquido)}</div>
+                <div className="sw-kpi-label">Lucro Líquido</div>
+                {totalBruto > 0 && (
+                  <span className="sw-badge sw-badge-up">
+                    ▲ {Math.round((lucroLiquido / totalBruto) * 100)}% de margem
+                  </span>
+                )}
+              </div>
+              <VuMeter value={lucroLiquido > 0 ? lucroLiquido : 0} max={vuMaxBruto} />
+            </div>
+          </div>
+
+          {/* 3 · A Receber */}
+          <div className="sw-kpi-card">
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: 'var(--sw-orange)', borderRadius: '18px 18px 0 0',
+              boxShadow: '0 0 8px rgba(255,98,0,.5)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div className="sw-hw-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M8 2v12M5 10l3 3 3-3M3 6h10"/>
+                  </svg>
+                </div>
+                <div className="sw-kpi-val" style={{ color: 'var(--sw-orange)' }}>{moeda(granaAReceber)}</div>
+                <div className="sw-kpi-label">A Receber (Pendente)</div>
+                {pendentes.length > 0 && (
+                  <span className="sw-badge sw-badge-pend">● {pendentes.length} show{pendentes.length !== 1 ? 's' : ''} futuros</span>
+                )}
+              </div>
+              <VuMeter value={granaAReceber} max={vuMaxBruto} color="var(--sw-orange)" />
+            </div>
+          </div>
+
+          {/* 4 · Shows */}
+          <div className="sw-kpi-card">
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+              background: 'var(--sw-purple)', borderRadius: '18px 18px 0 0',
+              boxShadow: '0 0 8px rgba(123,92,245,.5)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div className="sw-hw-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <circle cx="8" cy="8" r="6"/>
+                    <circle cx="8" cy="8" r="2"/>
+                    <path d="M8 2v1M8 13v1M2 8h1M13 8h1"/>
+                  </svg>
+                </div>
+                <div className="sw-kpi-val" style={{ color: 'var(--sw-purple)' }}>
+                  {confirmados.length}{' '}
+                  <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--sw-text2)' }}>sets</span>
+                </div>
+                <div className="sw-kpi-label">Shows Confirmados</div>
+                {showsAno.length > confirmados.length && (
+                  <span className="sw-badge sw-badge-flat">+ {showsAno.length - confirmados.length} pendentes</span>
+                )}
+              </div>
+              <VuMeter value={confirmados.length} max={Math.max(showsAno.length, 1)} color="var(--sw-purple)" />
+            </div>
+          </div>
+        </div>
+
+        <div className="sw-divider" />
+
+        {/* ── Distribution + Composition ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 28 }}>
+
+          {/* Distribuição de Receita */}
+          <div>
+            <div className="sw-section-label">Distribuição de Receita</div>
+
+            {[
+              { label: 'Lucro DJ',           valor: lucroLiquido > 0 ? lucroLiquido : 0, pctVal: totalBruto ? Math.round((lucroLiquido / totalBruto) * 100) : 0, cor: 'var(--sw-blue)' },
+              { label: `Daniel (${new Date() >= INICIO_PERCENTUAL_20 ? '20' : '15'}% base líq.)`, valor: totalDaniel, pctVal: totalBruto ? Math.round((totalDaniel / totalBruto) * 100) : 0, cor: '#FF9F0A' },
+              { label: 'Yuri (R$300/show)',  valor: totalYuri,    pctVal: totalBruto ? Math.round((totalYuri / totalBruto) * 100) : 0,    cor: 'var(--sw-green)' },
+              { label: 'Custos Operacionais',valor: totalCustos,  pctVal: totalBruto ? Math.round((totalCustos / totalBruto) * 100) : 0,  cor: 'var(--sw-red)' },
+            ].map((row, i) => (
+              <div key={i} className="sw-fin-row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <div className="sw-fin-dot" style={{ background: row.cor, color: row.cor }} />
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>{row.label}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 10, color: 'var(--sw-text3)', fontFamily: "'JetBrains Mono',monospace" }}>
+                    {row.pctVal}%
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
+                    {moeda(row.valor)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Composição do Cache */}
+          <div>
+            <div className="sw-section-label">Composição do Cache</div>
+            <StackedBar segments={composicaoSegments} />
+
+            {/* Knobs row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              <Knob color="blue"   rotate={0}   label="DJ" />
+              <Knob color="orange" rotate={40}  label="Daniel" />
+              <Knob color="green"  rotate={-20} label="Yuri" />
+              <Knob color="red"    rotate={60}  label="Custos" />
+              <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,.06)', marginTop: -14 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 18, fontWeight: 700, letterSpacing: '-.02em', color: 'var(--sw-text1)' }}>
+                  {moeda(totalBruto)}
+                </div>
+                <div style={{ fontSize: 9, color: 'var(--sw-text3)', letterSpacing: '.07em', textTransform: 'uppercase' }}>
+                  Total Cache
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ── HERO CARD ── */}
-      <div className="dj-hero">
-        <div className="dj-hero-left">
-          <div className="dj-hero-eyebrow">💰 Faturamento dos Gigs</div>
-          <div className="dj-hero-valor">{moeda(totalBruto)}</div>
-          <div className="dj-hero-meta">
-            <DeltaBadge delta={deltaMes} />
-            <span className="dj-hero-meta-txt">vs mês anterior</span>
-          </div>
-        </div>
-        <div className="dj-hero-right">
-          <div className="dj-hero-stat">
-            <span className="dj-hero-stat-val">{confirmados.length}</span>
-            <span className="dj-hero-stat-lbl">Sets Tocadas</span>
-          </div>
-          <div className="dj-hero-divider" />
-          <div className="dj-hero-stat">
-            <span className="dj-hero-stat-val" style={{ color: 'var(--dj-cyan)' }}>{moeda(lucroLiquido)}</span>
-            <span className="dj-hero-stat-lbl">Lucro Líquido</span>
-          </div>
-          <div className="dj-hero-divider" />
-          <div className="dj-hero-stat">
-            <span className="dj-hero-stat-val" style={{ color: 'var(--dj-yellow)' }}>{moeda(granaAReceber)}</span>
-            <span className="dj-hero-stat-lbl">Grana a Receber</span>
-          </div>
-        </div>
-      </div>
+      {/* ══ PANEL 2: CHARTS ROW ══ */}
+      <div className="sw-charts-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1.7fr', gap: 18 }}>
 
-      {/* ── KPI GRID ── */}
-      <div className="dj-kpi-grid">
-        {[
-          { icon: '🎵', label: 'Sets Tocadas',    valor: confirmados.length,      cor: 'var(--dj-purple)', num: true },
-          { icon: '📊', label: 'Cache Médio',     valor: moeda(mediaCache),       cor: 'var(--dj-cyan)'   },
-          { icon: '🔥', label: 'Mês Mais Insano', valor: melhorMes.label,         cor: 'var(--dj-yellow)' },
-          { icon: '⏳', label: 'Pendentes',        valor: pendentes.length,        cor: 'var(--dj-pink)',  num: true },
-          { icon: '👤', label: 'Pago a Daniel',   valor: moeda(totalDaniel),      cor: 'var(--dj-muted)'  },
-          { icon: '👤', label: 'Pago a Yuri',     valor: moeda(totalYuri),        cor: 'var(--dj-muted)'  },
-          { icon: '💸', label: 'Grana a Receber', valor: moeda(granaAReceber),    cor: 'var(--dj-yellow)' },
-          { icon: '📅', label: 'Total de Shows',  valor: showsAno.length,         cor: 'var(--dj-text)',  num: true },
-        ].map((k, i) => (
-          <div key={i} className="dj-kpi">
-            <span className="dj-kpi-icon">{k.icon}</span>
-            <span className="dj-kpi-val" style={{ color: k.cor }}>{k.valor}</span>
-            <span className="dj-kpi-lbl">{k.label}</span>
+        {/* Gigs por Mês */}
+        <div className="sw-panel" style={{ padding: '22px 22px 18px' }}>
+          <Screw pos="tl" /><Screw pos="tr" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-.01em' }}>Gigs por Mês</div>
+              <div style={{ fontSize: 9, color: 'var(--sw-text3)', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 2 }}>
+                · {anoSel} ·
+              </div>
+            </div>
+            <span className="sw-engrave">SHOWS</span>
           </div>
-        ))}
-      </div>
 
-      {/* ── INSIGHTS ── */}
-      {insights.length > 0 && (
-        <div className="dj-insights-wrap">
-          <div className="dj-section-title">⚡ Insights</div>
-          <div className="dj-insights-grid">
-            {insights.map((ins, i) => <InsightCard key={i} {...ins} />)}
+          <FaderBarChart dados={gigsPorMes} mesAtual={mesAtual} />
+
+          <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--sw-blue)', display: 'inline-block', boxShadow: '0 0 4px rgba(26,110,250,.6)' }} />
+              Confirmado
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, display: 'inline-block', background: 'repeating-linear-gradient(45deg,rgba(255,98,0,.5) 0,rgba(255,98,0,.5) 3px,rgba(255,98,0,.12) 3px,rgba(255,98,0,.12) 6px)' }} />
+              Pendente
+            </span>
           </div>
         </div>
-      )}
 
-      {/* ── CHARTS ROW ── */}
-      <div className="dj-charts-row">
-        <div className="dj-chart-card dj-chart-wide">
-          <div className="dj-chart-head">
-            <span className="dj-section-title">📈 Cache por Mês</span>
-            <span className="dj-chart-total">{moeda(totalBruto)}</span>
+        {/* Faturamento Mensal — Waveform */}
+        <div className="sw-panel" style={{ padding: '22px 22px 18px' }}>
+          <Screw pos="tl" /><Screw pos="tr" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-.01em' }}>Faturamento Mensal</div>
+              <div style={{ fontSize: 9, color: 'var(--sw-text3)', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 2 }}>
+                · Histórico {anoSel} ·
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="sw-engrave">LCD</span>
+              <div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, fontWeight: 800, color: 'var(--sw-blue)', letterSpacing: '-.01em' }}>
+                  {moeda(totalBruto)}
+                </div>
+                <div style={{ fontSize: 8, color: 'var(--sw-text3)', letterSpacing: '.07em', textAlign: 'right' }}>TOTAL ANO</div>
+              </div>
+            </div>
           </div>
-          <GlowLineChart dados={cachePorMes} altura={180} />
-        </div>
-        <div className="dj-chart-card">
-          <div className="dj-chart-head">
-            <span className="dj-section-title">🎧 Sets por Mês</span>
-            <span className="dj-chart-total">{showsAno.length} total</span>
+
+          <WaveformChart dados={waveformData} />
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
+              <span style={{ width: 16, height: 2, borderRadius: 2, background: 'var(--sw-blue)', display: 'inline-block' }} /> Cache Bruto
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
+              <span style={{ width: 16, height: 2, borderRadius: 2, background: '#FF9F0A', display: 'inline-block', opacity: .7 }} /> Lucro Líquido
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
+              Média: <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginLeft: 2 }}>{moeda(mediaCache)}</span>
+            </span>
           </div>
-          <NeonBarChart dados={showsPorMesChart} altura={140} />
         </div>
       </div>
 
-      {/* ── HEATMAP ── */}
-      <div className="dj-card">
-        <div className="dj-chart-head" style={{ marginBottom: 16 }}>
-          <span className="dj-section-title">🗓 Frequência de Shows — {anoSel}</span>
-          <span className="dj-chart-total">{showsAno.length} shows</span>
-        </div>
-        <HeatMap showsPorMes={showsPorMesArr} max={maxShowsMes} />
-      </div>
+      {/* ══ PANEL 3: RANKING + TIMELINE ══ */}
+      <div className="sw-bottom-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
 
-      {/* ── CONTRATANTES + TIMELINE ── */}
-      <div className="dj-bottom-row">
-
-        {/* Ranking */}
-        <div className="dj-card">
-          <div className="dj-section-title" style={{ marginBottom: 16 }}>🏆 Ranking de Contratantes</div>
-          {topContratantes.length === 0 && <p className="dj-empty">Nenhum dado ainda</p>}
+        {/* Ranking de Contratantes */}
+        <div className="sw-panel" style={{ padding: '22px 24px' }}>
+          <Screw pos="tl" /><Screw pos="tr" />
+          <div className="sw-panel-head">
+            <span style={{ fontSize: 13, fontWeight: 700 }}>🏆 Ranking de Contratantes</span>
+            <span className="sw-engrave">TOP {topContratantes.length}</span>
+          </div>
+          {topContratantes.length === 0 && <p className="sw-empty">Nenhum dado ainda</p>}
           {topContratantes.map(([nome, d], i) => {
             const maxShows = topContratantes[0]?.[1]?.shows || 1;
             const barra = Math.round((d.shows / maxShows) * 100);
-            const cores = ['var(--dj-yellow)', 'var(--dj-cyan)', 'var(--dj-purple)', 'var(--dj-pink)', 'var(--dj-text)'];
             return (
-              <div key={i} className="dj-rank-item">
-                <span className="dj-rank-pos" style={{ color: cores[i] }}>#{i + 1}</span>
-                <div className="dj-rank-info">
-                  <div className="dj-rank-nome">{nome}</div>
-                  <div className="dj-rank-bar-track">
-                    <div className="dj-rank-bar-fill" style={{ width: `${barra}%`, background: cores[i] }} />
+              <div key={i} className="sw-rank-item">
+                <span className="sw-rank-pos" style={{ color: rankColors[i] }}>#{i + 1}</span>
+                <div className="sw-rank-info">
+                  <div className="sw-rank-nome">{nome}</div>
+                  <div className="sw-rank-bar-track">
+                    <div className="sw-rank-bar-fill" style={{ width: `${barra}%`, background: rankColors[i] }} />
                   </div>
                 </div>
-                <div className="dj-rank-nums">
-                  <span className="dj-rank-shows">{d.shows} set{d.shows !== 1 ? 's' : ''}</span>
-                  <span className="dj-rank-cache">{moeda(d.cache)}</span>
+                <div className="sw-rank-nums">
+                  <span className="sw-rank-shows">{d.shows} set{d.shows !== 1 ? 's' : ''}</span>
+                  <span className="sw-rank-cache">{moeda(d.cache)}</span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Timeline */}
-        <div className="dj-card">
-          <div className="dj-section-title" style={{ marginBottom: 16 }}>⏱ Últimos Sets</div>
-          {ultimosShows.length === 0 && <p className="dj-empty">Nenhum show confirmado ainda</p>}
-          {ultimosShows.map((s, i) => (
-            <div key={s.id} className="dj-timeline-item">
-              <div className="dj-timeline-dot" />
-              <div className="dj-timeline-body">
-                <div className="dj-timeline-evento">{s.evento || '—'}</div>
-                <div className="dj-timeline-meta">
+        {/* Últimos Sets */}
+        <div className="sw-panel" style={{ padding: '22px 24px' }}>
+          <Screw pos="tl" /><Screw pos="tr" />
+          <div className="sw-panel-head">
+            <span style={{ fontSize: 13, fontWeight: 700 }}>⏱ Últimos Sets</span>
+            <span className="sw-engrave">RECENTES</span>
+          </div>
+          {ultimosShows.length === 0 && <p className="sw-empty">Nenhum show confirmado ainda</p>}
+          {ultimosShows.map((s) => (
+            <div key={s.id} className="sw-timeline-item">
+              <div className="sw-timeline-dot" />
+              <div className="sw-timeline-body">
+                <div className="sw-timeline-evento">{s.evento || '—'}</div>
+                <div className="sw-timeline-meta">
                   <span>{new Date(s.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                   {s.contratante && <span>· {s.contratante}</span>}
                 </div>
               </div>
-              <div className="dj-timeline-cache">
+              <div className="sw-timeline-cache">
                 {s.cache ? moeda(s.cache) : <span style={{ opacity: 0.3 }}>—</span>}
               </div>
             </div>
           ))}
         </div>
-
       </div>
 
-      {/* ── DISTRIBUIÇÃO ── */}
-      <div className="dj-card">
-        <div className="dj-section-title" style={{ marginBottom: 20 }}>💸 Distribuição Financeira</div>
-        <div className="dj-dist-grid">
-          {[
-            { label: 'Faturamento Bruto', valor: totalBruto,   cor: 'var(--dj-cyan)',   pct: 100 },
-            { label: 'Pago a Daniel',     valor: totalDaniel,  cor: 'var(--dj-yellow)', pct: totalBruto ? Math.round(totalDaniel / totalBruto * 100) : 0 },
-            { label: 'Pago a Yuri',       valor: totalYuri,    cor: 'var(--dj-purple)', pct: totalBruto ? Math.round(totalYuri / totalBruto * 100) : 0 },
-            { label: 'Lucro Líquido',     valor: lucroLiquido, cor: lucroLiquido >= 0 ? 'var(--dj-green)' : 'var(--red)', pct: totalBruto ? Math.round(lucroLiquido / totalBruto * 100) : 0 },
-          ].map((d, i) => (
-            <div key={i} className="dj-dist-item">
-              <div className="dj-dist-head">
-                <span className="dj-dist-label">{d.label}</span>
-                <span className="dj-dist-pct" style={{ color: d.cor }}>{d.pct}%</span>
-              </div>
-              <div className="dj-dist-valor" style={{ color: d.cor }}>{moeda(d.valor)}</div>
-              <div className="dj-dist-track">
-                <div className="dj-dist-fill" style={{ width: `${Math.abs(d.pct)}%`, background: d.cor }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── PROJEÇÃO ── */}
+      {/* ══ PANEL 4: PROJEÇÃO ══ */}
       {projecao.length > 0 && (
-        <div className="dj-card">
-          <div className="dj-section-title" style={{ marginBottom: 16 }}>🔮 Projeção de Faturamento</div>
-          <div className="dj-projecao-grid">
+        <div className="sw-panel" style={{ padding: '22px 24px' }}>
+          <Screw pos="tl" /><Screw pos="tr" />
+          <div className="sw-panel-head">
+            <span style={{ fontSize: 13, fontWeight: 700 }}>🔮 Projeção de Faturamento</span>
+            <span className="sw-engrave">FORECAST</span>
+          </div>
+          <div className="sw-projecao-grid">
             {projecao.map((p, i) => (
-              <div key={i} className={`dj-proj-item ${p.passado ? 'dj-proj-passado' : 'dj-proj-futuro'}`}>
-                <div className="dj-proj-mes">{p.nomeMes}</div>
-                <div className="dj-proj-valor">{moeda(p.totalAgendado)}</div>
-                <div className="dj-proj-shows">{p.quantidadeShows} set{p.quantidadeShows !== 1 ? 's' : ''}</div>
+              <div key={i} className={`sw-proj-item ${p.passado ? 'sw-proj-passado' : 'sw-proj-futuro'}`}>
+                <div className="sw-proj-mes">{p.nomeMes}</div>
+                <div className="sw-proj-valor">{moeda(p.totalAgendado)}</div>
+                <div className="sw-proj-shows">{p.quantidadeShows} set{p.quantidadeShows !== 1 ? 's' : ''}</div>
                 {!p.passado && p.totalAgendado > 0 && (
-                  <div className="dj-proj-badge">Agendado</div>
+                  <div className="sw-proj-badge">Agendado</div>
                 )}
               </div>
             ))}
