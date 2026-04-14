@@ -1,289 +1,86 @@
 import { useMemo, useState, useEffect } from 'react';
-import {
-  AreaChart, Area,
-  BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
-} from 'recharts';
+import { TrendingUp, DollarSign, Clock, Disc3 } from 'lucide-react';
 import { getProjecao } from '../services/api';
-import '../dashboard.css';
 
-/* ── Constants ─────────────────────────────────────────────────────────── */
+import HardwarePanel  from '../components/xdj/HardwarePanel';
+import LcdDisplay     from '../components/xdj/LcdDisplay';
+import VuMeter        from '../components/xdj/VuMeter';
+import Knob           from '../components/xdj/Knob';
+import WaveformChart  from '../components/xdj/WaveformChart';
+import FaderChart     from '../components/xdj/FaderChart';
+import DonutChart     from '../components/xdj/DonutChart';
+import StackedBar     from '../components/xdj/StackedBar';
+import PerformanceRadar from '../components/xdj/PerformanceRadar';
+import ProjecaoModule from '../components/xdj/ProjecaoModule';
+
+/* ── Formatters ── */
 const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MESES_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-/* ── Formatters ─────────────────────────────────────────────────────────── */
 function moeda(v) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(v || 0);
 }
 function moedaCurta(v) {
   if (v >= 1000) return `R$${(v / 1000).toFixed(1)}k`;
   return `R$${Math.round(v)}`;
 }
-function pct(a, b) {
-  if (!b) return null;
-  return Math.round(((a - b) / b) * 100);
+
+/* ── Business rule dates ── */
+const INICIO_EQUIPE            = new Date('2025-03-01');
+const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
+const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
+
+function calcDaniel(show) {
+  const d = new Date(show.data + 'T00:00:00');
+  if (d < INICIO_EQUIPE) return 0;
+  if (d < INICIO_PERCENTUAL_DANIEL) return 90;
+  const p = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
+  const base = (show.cache || 0) - (show.custos || 0);
+  return (base > 0 ? base * p : 0) + 40;
+}
+function calcYuri(show) {
+  const d = new Date(show.data + 'T00:00:00');
+  return d < INICIO_EQUIPE ? 0 : 300;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS
+   SECTION HEADER
    ══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Allen Screw ── */
-function Screw({ pos }) {
-  return <div className={`sw-screw sw-screw-${pos}`} />;
-}
-
-/* ── Segmented VU Meter ── */
-const VU_SEGS = 13;
-function vuClass(segIdx, litCount) {
-  if (segIdx >= litCount) return 'sw-vu-seg';
-  if (segIdx <= 4)  return 'sw-vu-seg on-green';
-  if (segIdx <= 6)  return 'sw-vu-seg on-yellow';
-  if (segIdx <= 7)  return 'sw-vu-seg on-orange';
-  return 'sw-vu-seg on-red';
-}
-function VuMeter({ value, max, color }) {
-  const litCount = max > 0 ? Math.round((value / max) * VU_SEGS) : 0;
+function SectionHeader({ title, right }) {
   return (
-    <div className="sw-vu-col" style={{ width: 14, height: 120, padding: '2px 0' }}>
-      {Array.from({ length: VU_SEGS }, (_, i) => {
-        let cls = color ? 'sw-vu-seg' : vuClass(i, litCount);
-        const lit = i < litCount;
-        return (
-          <div
-            key={i}
-            className={cls}
-            style={color && lit ? {
-              background: color,
-              boxShadow: `0 0 5px ${color}99, 0 0 1px ${color}`,
-            } : undefined}
-          />
-        );
-      })}
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-[11px] font-display font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        {title}
+      </h2>
+      {right}
     </div>
   );
 }
 
-/* ── Custom Tooltip (Recharts) ── */
-function ChartTooltip({ active, payload, label, formatter }) {
-  if (!active || !payload?.length) return null;
+/* ══════════════════════════════════════════════════════════════════════════
+   YEAR SELECTOR
+   ══════════════════════════════════════════════════════════════════════════ */
+function YearSelector({ anos, anoSel, onSelect }) {
   return (
-    <div className="sw-tooltip">
-      <div className="sw-tooltip-label">{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} className="sw-tooltip-val" style={{ color: p.color || 'var(--sw-text1)' }}>
-          {formatter ? formatter(p.value) : moeda(p.value)}
-        </div>
+    <div className="flex items-center gap-1 p-0.5 rounded-lg"
+         style={{ background: 'hsl(220 10% 5%)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.4)' }}>
+      {anos.map(a => (
+        <button
+          key={a}
+          onClick={() => onSelect(a)}
+          className="px-3 py-1 rounded-md text-[11px] font-display font-bold transition-all"
+          style={anoSel === a ? {
+            background: 'hsl(217 90% 55%)',
+            color: '#fff',
+            boxShadow: '0 0 10px hsl(217 90% 55% / 0.4)',
+          } : {
+            color: 'hsl(220 10% 45%)',
+          }}
+        >
+          {a}
+        </button>
       ))}
     </div>
-  );
-}
-
-/* ── Waveform Area Chart (Faturamento Mensal) ── */
-function WaveformChart({ dados }) {
-  return (
-    <div className="sw-lcd" style={{ padding: '14px 6px 4px' }}>
-      <div className="sw-chart-wrapper" style={{ position: 'relative', zIndex: 2 }}>
-        <ResponsiveContainer width="100%" height={160}>
-          <AreaChart data={dados} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="areaBlue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="#1A6EFA" stopOpacity=".25" />
-                <stop offset="100%" stopColor="#1A6EFA" stopOpacity="0"   />
-              </linearGradient>
-              <linearGradient id="areaOrange" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="#FF9F0A" stopOpacity=".18" />
-                <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0"   />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              strokeDasharray="4 4"
-              stroke="rgba(0,0,0,.07)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="label"
-              tick={{ fill: '#A8AAB6', fontSize: 9, fontFamily: 'JetBrains Mono,monospace' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tickFormatter={moedaCurta}
-              tick={{ fill: '#A8AAB6', fontSize: 9, fontFamily: 'JetBrains Mono,monospace' }}
-              axisLine={false}
-              tickLine={false}
-              width={36}
-            />
-            <Tooltip content={<ChartTooltip />} />
-            {/* Orange area (lucro) — behind */}
-            <Area
-              type="monotone"
-              dataKey="lucro"
-              stroke="#FF9F0A"
-              strokeWidth={1.5}
-              strokeOpacity={0.6}
-              fill="url(#areaOrange)"
-              dot={false}
-              activeDot={{ r: 4, fill: '#FF9F0A', stroke: 'white', strokeWidth: 2 }}
-            />
-            {/* Blue area (cache) — main, in front */}
-            <Area
-              type="monotone"
-              dataKey="valor"
-              stroke="#1A6EFA"
-              strokeWidth={2}
-              fill="url(#areaBlue)"
-              dot={{ r: 3, fill: 'white', stroke: '#1A6EFA', strokeWidth: 1.8 }}
-              activeDot={{ r: 5, fill: '#1A6EFA', stroke: 'white', strokeWidth: 2 }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-/* ── Fader Bar Chart (Gigs por Mês) ── */
-function FaderBarChart({ dados, mesAtual }) {
-  const max = Math.max(...dados.map(d => d.confirmado + d.pendente), 1);
-  return (
-    <div className="sw-lcd" style={{ padding: '12px 10px 10px' }}>
-      <div style={{ display: 'flex', gap: 8, height: 110, alignItems: 'flex-end' }}>
-        {dados.map((d, i) => {
-          const isAtual   = i === mesAtual - 1;
-          const isVazio   = d.confirmado === 0 && d.pendente === 0;
-          const hConf     = max > 0 ? (d.confirmado / max) * 90 : 0;
-          const hPend     = max > 0 ? (d.pendente   / max) * 90 : 0;
-          const total     = d.confirmado + d.pendente;
-          return (
-            <div
-              key={i}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
-              className={isAtual ? 'sw-fader-active' : ''}
-            >
-              {/* value label — claro sobre fundo escuro do LCD */}
-              <div style={{
-                fontFamily: "'JetBrains Mono',monospace",
-                fontSize: 10,
-                fontWeight: isAtual ? 800 : 600,
-                color: isAtual ? '#6AABFF' : isVazio ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.45)',
-              }}>
-                {isVazio ? '—' : total}
-              </div>
-              {/* track */}
-              <div
-                className="sw-fader-track"
-                style={{
-                  width: '100%', height: 90,
-                  ...(isAtual ? {
-                    boxShadow: 'inset 2px 2px 6px rgba(0,0,0,.45),inset -1px -1px 2px rgba(255,255,255,.04),0 0 0 1.5px var(--sw-blue),0 0 8px rgba(26,110,250,.35)',
-                  } : {}),
-                }}
-              >
-                {/* pending fill (striped) */}
-                {d.pendente > 0 && (
-                  <div className="sw-fader-fill sw-fader-fill-pending" style={{ height: `${hPend}%`, bottom: `${hConf}%` }} />
-                )}
-                {/* confirmed fill */}
-                {d.confirmado > 0 && (
-                  <div className="sw-fader-fill sw-fader-fill-solid" style={{ height: `${hConf}%` }} />
-                )}
-              </div>
-              {/* month label — claro sobre LCD escuro */}
-              <div style={{
-                fontSize: 8,
-                fontWeight: isAtual ? 700 : 500,
-                letterSpacing: '.08em',
-                textTransform: 'uppercase',
-                color: isAtual ? '#6AABFF' : 'rgba(255,255,255,.35)',
-              }}>
-                {MESES_LABEL[i]}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ── Stacked Composition Bar ── */
-function StackedBar({ segments }) {
-  const total = segments.reduce((a, s) => a + s.value, 0);
-  return (
-    <div>
-      {/* Bar */}
-      <div className="sw-inset" style={{ height: 32, display: 'flex', overflow: 'hidden', marginBottom: 8 }}>
-        {segments.map((s, i) => {
-          const w = total > 0 ? (s.value / total) * 100 : 0;
-          return w > 0 ? (
-            <div key={i} style={{
-              width: `${w}%`,
-              background: s.gradient,
-              boxShadow: i === 0 ? 'inset 0 1px 0 rgba(255,255,255,.25)' : undefined,
-              transition: 'width .6s ease',
-            }} />
-          ) : null;
-        })}
-      </div>
-      {/* Scale */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between',
-        fontSize: 9, color: 'var(--sw-text3)',
-        fontFamily: "'JetBrains Mono',monospace",
-        marginBottom: 14,
-      }}>
-        {['0%','25%','50%','75%','100%'].map(l => <span key={l}>{l}</span>)}
-      </div>
-    </div>
-  );
-}
-
-/* ── Knob — potenciômetro 3D ── */
-function Knob({ color, rotate = 0, label, value }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-      {/* Aro de base: cavidade embutida no painel onde o knob gira */}
-      <div style={{
-        width: 44, height: 44,
-        borderRadius: '50%',
-        background: 'var(--sw-inset)',
-        border: '1px solid rgba(0,0,0,.20)',
-        boxShadow: 'inset 2px 2px 5px rgba(0,0,0,.25), inset -1px -1px 3px rgba(255,255,255,.50)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {/* --knob-rotate faz o conic-gradient girar junto com o indicador */}
-        <div
-          className={`sw-knob sw-knob-${color}`}
-          style={{ '--knob-rotate': `${rotate}deg` }}
-        >
-          <div
-            className="sw-knob-indicator"
-            style={{ transform: `translateX(-50%) rotate(${rotate}deg)`, transformOrigin: '50% 100%' }}
-          />
-        </div>
-      </div>
-      <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--sw-text3)' }}>
-        {label}
-      </div>
-      {value != null && (
-        <div style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, color: 'var(--sw-text2)' }}>
-          {value}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Delta badge ── */
-function DeltaBadge({ delta }) {
-  if (delta === null || delta === undefined) return null;
-  const up = delta >= 0;
-  return (
-    <span className={`sw-badge ${up ? 'sw-badge-up' : 'sw-badge-down'}`}>
-      {up ? '▲' : '▼'} {Math.abs(delta)}% vs anterior
-    </span>
   );
 }
 
@@ -304,80 +101,45 @@ export default function DashboardPage({ shows }) {
 
   useEffect(() => { getProjecao().then(setProjecao).catch(console.error); }, [shows]);
 
-  /* ── Business rules ── */
-  const INICIO_EQUIPE            = new Date('2025-03-01');
-  const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
-  const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
-
+  /* ── Filtered sets ── */
   const showsAno    = useMemo(() => shows.filter(s => s.ano === Number(anoSel)), [shows, anoSel]);
   const confirmados = useMemo(() => showsAno.filter(s => s.status === 'CONFIRMADO'), [showsAno]);
   const pendentes   = useMemo(() => showsAno.filter(s => s.status === 'PENDENTE'),   [showsAno]);
 
   /* ── KPI calculations ── */
-  const totalBruto = confirmados.reduce((a, s) => a + (s.cache || 0), 0);
-  const totalCustos = confirmados.reduce((a, s) => a + (s.custos || 0), 0);
+  const totalBruto   = confirmados.reduce((a, s) => a + (s.cache || 0), 0);
+  const totalCustos  = confirmados.reduce((a, s) => a + (s.custos || 0), 0);
+  const totalDaniel  = confirmados.reduce((a, s) => a + calcDaniel(s), 0);
+  const totalYuri    = confirmados.reduce((a, s) => a + calcYuri(s), 0);
+  const lucroLiquido = totalBruto - totalDaniel - totalYuri - totalCustos;
+  const aReceber     = pendentes.reduce((a, s) => a + (s.cache || 0), 0);
+  const mediaCache   = confirmados.length ? totalBruto / confirmados.length : 0;
 
-  const totalDaniel = confirmados.reduce((a, s) => {
-    const d = new Date(s.data + 'T00:00:00');
-    if (d < INICIO_EQUIPE)            return a;
-    if (d < INICIO_PERCENTUAL_DANIEL) return a + 90;
-    const p    = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
-    const base = (s.cache || 0) - (s.custos || 0);
-    return a + (base > 0 ? base * p : 0) + 40;
-  }, 0);
-
-  const totalYuri = confirmados.reduce((a, s) => {
-    const d = new Date(s.data + 'T00:00:00');
-    if (d < INICIO_EQUIPE) return a;
-    return a + 300;
-  }, 0);
-
-  const lucroLiquido  = totalBruto - totalDaniel - totalYuri - totalCustos;
-  const mediaCache    = confirmados.length ? totalBruto / confirmados.length : 0;
-  const granaAReceber = pendentes.reduce((a, s) => a + (s.cache || 0), 0);
-
-  /* ── Por mês ── */
-  const cachePorMes = useMemo(() => {
-    const map = Array(12).fill(0);
-    confirmados.forEach(s => { if (s.mes) map[s.mes - 1] += (s.cache || 0); });
-    return MESES_LABEL.map((label, i) => ({ label, valor: Math.round(map[i]) }));
-  }, [confirmados]);
-
-  const lucroPorMes = useMemo(() => {
-    const map = Array(12).fill(0);
+  /* ── Monthly data ── */
+  const waveformData = useMemo(() => {
+    const cacheMap  = Array(12).fill(0);
+    const lucroMap  = Array(12).fill(0);
     confirmados.forEach(s => {
       if (!s.mes) return;
-      const d = new Date(s.data + 'T00:00:00');
-      const p = d < INICIO_PERCENTUAL_20 ? 0.15 : 0.20;
-      const base = (s.cache || 0) - (s.custos || 0);
-      const daniel = d < INICIO_EQUIPE ? 0 : d < INICIO_PERCENTUAL_DANIEL ? 90 : (base > 0 ? base * p : 0) + 40;
-      const yuri = d < INICIO_EQUIPE ? 0 : 300;
-      map[s.mes - 1] += (s.cache || 0) - daniel - yuri - (s.custos || 0);
+      cacheMap[s.mes - 1] += (s.cache || 0);
+      const daniel = calcDaniel(s);
+      const yuri   = calcYuri(s);
+      lucroMap[s.mes - 1] += Math.max((s.cache || 0) - daniel - yuri - (s.custos || 0), 0);
     });
-    return MESES_LABEL.map((label, i) => ({ label, lucro: Math.max(Math.round(map[i]), 0) }));
+    return MESES_LABEL.map((label, i) => ({
+      label,
+      valor: Math.round(cacheMap[i]),
+      lucro: Math.round(lucroMap[i]),
+    }));
   }, [confirmados]);
 
-  /* Merge cache + lucro por mês para o waveform */
-  const waveformData = useMemo(() =>
-    cachePorMes.map((d, i) => ({ ...d, lucro: lucroPorMes[i].lucro })),
-    [cachePorMes, lucroPorMes]
-  );
-
-  /* ── Gigs por mês ── */
   const gigsPorMes = useMemo(() => {
     const conf = Array(12).fill(0);
     const pend = Array(12).fill(0);
     confirmados.forEach(s => { if (s.mes) conf[s.mes - 1]++; });
     pendentes.forEach(s =>   { if (s.mes) pend[s.mes - 1]++; });
-    return MESES_LABEL.map((label, i) => ({
-      label, confirmado: conf[i], pendente: pend[i],
-    }));
+    return MESES_LABEL.map((label, i) => ({ label, confirmado: conf[i], pendente: pend[i] }));
   }, [confirmados, pendentes]);
-
-  /* ── Variação mês atual ── */
-  const cachesMesAtual    = cachePorMes[mesAtual - 1]?.valor || 0;
-  const cachesMesAnterior = cachePorMes[mesAtual - 2]?.valor || 0;
-  const deltaMes = pct(cachesMesAtual, cachesMesAnterior);
 
   /* ── Top contratantes ── */
   const topContratantes = useMemo(() => {
@@ -388,7 +150,8 @@ export default function DashboardPage({ shows }) {
       map[s.contratante].shows++;
       map[s.contratante].cache += (s.cache || 0);
     });
-    return Object.entries(map).sort((a, b) => b[1].shows - a[1].shows).slice(0, 5);
+    return Object.entries(map).sort((a, b) => b[1].shows - a[1].shows).slice(0, 5)
+      .map(([nome, v]) => ({ nome, ...v }));
   }, [showsAno]);
 
   /* ── Últimos shows ── */
@@ -397,374 +160,385 @@ export default function DashboardPage({ shows }) {
     [confirmados]
   );
 
-  /* ── VU meter refs ── */
-  const vuMaxBruto = Math.max(totalBruto, granaAReceber, 1000);
+  /* ── Radar metrics ── */
+  const radarData = useMemo(() => {
+    const uniqueClients = new Set(confirmados.map(s => s.contratante).filter(Boolean)).size;
+    const maxExpected   = 20;
+    const margem        = totalBruto > 0 ? (lucroLiquido / totalBruto) * 100 : 0;
+    const showsScore    = Math.min((confirmados.length / 40) * 100, 100);
+    const cacheScore    = Math.min((mediaCache / 2000) * 100, 100);
+    const clienteScore  = Math.min((uniqueClients / maxExpected) * 100, 100);
+    // Recorrência: contratantes com 2+ shows
+    const recount = Object.values(
+      confirmados.reduce((m, s) => {
+        if (s.contratante) m[s.contratante] = (m[s.contratante] || 0) + 1;
+        return m;
+      }, {})
+    ).filter(n => n >= 2).length;
+    const recorrencia = uniqueClients > 0 ? Math.min((recount / uniqueClients) * 100, 100) : 0;
+    const cachesMesAtual    = waveformData[mesAtual - 1]?.valor || 0;
+    const cachesMesAnterior = waveformData[mesAtual - 2]?.valor || 0;
+    const crescimento = cachesMesAnterior > 0
+      ? Math.min(Math.max(((cachesMesAtual - cachesMesAnterior) / cachesMesAnterior) * 100 + 50, 0), 100)
+      : 50;
+    return [
+      { subject: 'Cache',        value: Math.round(cacheScore),     fullMark: 100 },
+      { subject: 'Shows',        value: Math.round(showsScore),     fullMark: 100 },
+      { subject: 'Margem',       value: Math.round(Math.min(margem, 100)), fullMark: 100 },
+      { subject: 'Clientes',     value: Math.round(clienteScore),   fullMark: 100 },
+      { subject: 'Recorrência',  value: Math.round(recorrencia),    fullMark: 100 },
+      { subject: 'Crescimento',  value: Math.round(crescimento),    fullMark: 100 },
+    ];
+  }, [confirmados, totalBruto, lucroLiquido, mediaCache, waveformData, mesAtual]);
 
-  /* ── Composition segments ── */
-  const composicaoSegments = [
-    { value: lucroLiquido > 0 ? lucroLiquido : 0, gradient: 'linear-gradient(90deg,#1A6EFA,#4D92FF)', label: 'DJ' },
-    { value: totalDaniel,   gradient: 'linear-gradient(90deg,#FF9F0A,#FFBA45)', label: 'Daniel' },
-    { value: totalYuri,     gradient: 'linear-gradient(90deg,#28CD41,#5AE07A)', label: 'Yuri' },
-    { value: totalCustos,   gradient: 'linear-gradient(90deg,#FF3B2F,#FF6B61)', label: 'Custos' },
+  /* ── Composition data ── */
+  const donutData = [
+    { label: 'DJ',     value: Math.max(lucroLiquido, 0), color: 'hsl(217 90% 55%)' },
+    { label: 'Daniel', value: totalDaniel,               color: 'hsl(30 95% 55%)' },
+    { label: 'Yuri',   value: totalYuri,                 color: 'hsl(150 70% 45%)' },
+    { label: 'Custos', value: totalCustos,               color: 'hsl(0 75% 55%)' },
   ];
 
-  /* ── Colors for ranking ── */
-  const rankColors = ['var(--sw-blue)','var(--sw-orange)','var(--sw-purple)','var(--sw-yellow)','var(--sw-text2)'];
+  const stackedSegments = [
+    { value: Math.max(lucroLiquido, 0), color: 'linear-gradient(90deg,hsl(217 90% 55%),hsl(217 80% 65%))', glowColor: 'hsl(217 90% 55% / 0.3)', label: 'DJ' },
+    { value: totalDaniel,               color: 'linear-gradient(90deg,hsl(30 95% 55%),hsl(30 90% 65%))',   glowColor: 'hsl(30 95% 55% / 0.3)',  label: 'Daniel' },
+    { value: totalYuri,                 color: 'linear-gradient(90deg,hsl(150 70% 45%),hsl(150 60% 55%))', glowColor: 'hsl(150 70% 45% / 0.3)', label: 'Yuri' },
+    { value: totalCustos,               color: 'linear-gradient(90deg,hsl(0 75% 55%),hsl(0 65% 60%))',     glowColor: 'hsl(0 75% 55% / 0.3)',   label: 'Custos' },
+  ];
 
-  /* ═══════════════════════════════════════════════════════════════════════
-     RENDER
-     ══════════════════════════════════════════════════════════════════════ */
+  const knobPct = (v) => totalBruto > 0 ? Math.round((v / totalBruto) * 100) : 0;
+
+  const rankColors = [
+    'hsl(217 90% 55%)', 'hsl(30 95% 55%)', 'hsl(270 70% 60%)', 'hsl(45 95% 50%)', 'hsl(220 10% 50%)',
+  ];
+
+  /* ─── RENDER ─── */
   return (
-    <div className="dj-dash">
+    <div className="min-h-screen p-6 space-y-4"
+         style={{ background: 'hsl(220 12% 5%)' }}>
 
-      {/* ══ PANEL 1: FATURAMENTO KPIs ══ */}
-      <div className="sw-panel" style={{ padding: '26px 28px 22px' }}>
-        <Screw pos="tl" /><Screw pos="tr" /><Screw pos="bl" /><Screw pos="br" />
+      {/* ══ HEADER ══ */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h1 className="font-display text-xl font-bold text-foreground tracking-tight">
+            Faturamento · {MESES_FULL[mesAtual - 1]} {anoSel}
+          </h1>
+          <p className="text-[11px] text-muted-foreground mt-0.5 font-display uppercase tracking-widest">
+            {confirmados.length} sets confirmados · Média {moedaCurta(mediaCache)}/set
+          </p>
+        </div>
+        {anos.length > 0 && (
+          <YearSelector anos={anos} anoSel={anoSel} onSelect={setAnoSel} />
+        )}
+      </div>
 
-        {/* Panel header */}
-        <div className="sw-panel-head">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span className="sw-engrave">MÓDULO</span>
-            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-.01em' }}>
-              Faturamento · {MESES_FULL[mesAtual - 1]} {anoSel}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="sw-engrave">REV 3.0</span>
-            {/* Year selector */}
-            <div className="sw-seg-ctrl">
-              {anos.map(a => (
-                <button
-                  key={a}
-                  className={`sw-seg-btn${anoSel === a ? ' active' : ''}`}
-                  onClick={() => setAnoSel(a)}
-                >
-                  {a}
-                </button>
+      {/* ══ ROW 1: 4 KPI CARDS ══ */}
+      <div className="grid grid-cols-4 gap-4">
+        <LcdDisplay
+          delay={0}
+          icon={<TrendingUp size={16} />}
+          value={moeda(totalBruto)}
+          label="Faturamento Bruto"
+          sublabel={totalBruto > 0 ? `▲ ${confirmados.length} shows` : undefined}
+          ledColor="blue"
+          vuValue={totalBruto}
+          vuMax={Math.max(totalBruto, aReceber, 1000)}
+        />
+        <LcdDisplay
+          delay={0.1}
+          icon={<DollarSign size={16} />}
+          value={moeda(lucroLiquido)}
+          label="Lucro Líquido"
+          sublabel={totalBruto > 0 ? `${Math.round((lucroLiquido / totalBruto) * 100)}% de margem` : undefined}
+          ledColor="green"
+          vuValue={Math.max(lucroLiquido, 0)}
+          vuMax={Math.max(totalBruto, aReceber, 1000)}
+        />
+        <LcdDisplay
+          delay={0.2}
+          icon={<Clock size={16} />}
+          value={moeda(aReceber)}
+          label="A Receber (Pendente)"
+          sublabel={pendentes.length > 0 ? `${pendentes.length} shows futuros` : undefined}
+          ledColor="orange"
+          vuValue={aReceber}
+          vuMax={Math.max(totalBruto, aReceber, 1000)}
+        />
+        <LcdDisplay
+          delay={0.3}
+          icon={<Disc3 size={16} />}
+          value={`${confirmados.length} sets`}
+          label="Shows Confirmados"
+          sublabel={pendentes.length > 0 ? `+${pendentes.length} pendentes` : undefined}
+          ledColor="purple"
+          vuValue={confirmados.length}
+          vuMax={Math.max(showsAno.length, 1)}
+        />
+      </div>
+
+      {/* ══ ROW 2: DISTRIBUIÇÃO + DONUT + RADAR ══ */}
+      <div className="grid grid-cols-3 gap-4">
+
+        {/* Distribuição de receita */}
+        <HardwarePanel delay={0.1} variant="carbon">
+          <div className="p-5">
+            <SectionHeader title="Distribuição de Receita" />
+
+            {[
+              { label: 'Lucro DJ',                value: Math.max(lucroLiquido, 0), color: 'hsl(217 90% 55%)' },
+              { label: `Daniel (${new Date() >= INICIO_PERCENTUAL_20 ? '20' : '15'}% base líq.)`, value: totalDaniel, color: 'hsl(30 95% 55%)' },
+              { label: 'Yuri (R$300/show)',        value: totalYuri,    color: 'hsl(150 70% 45%)' },
+              { label: 'Custos Operacionais',      value: totalCustos,  color: 'hsl(0 75% 55%)' },
+            ].map((row, i) => (
+              <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0"
+                       style={{ background: row.color, boxShadow: `0 0 5px ${row.color}` }} />
+                  <span className="text-[12px] text-muted-foreground">{row.label}</span>
+                </div>
+                <span className="font-display text-[13px] font-bold text-foreground">
+                  {moeda(row.value)}
+                </span>
+              </div>
+            ))}
+
+            <div className="mt-4">
+              <StackedBar segments={stackedSegments} />
+            </div>
+
+            <div className="flex gap-3 mt-3">
+              {stackedSegments.map((s, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+                  <span className="text-[9px] text-muted-foreground font-display uppercase tracking-wider">{s.label}</span>
+                </div>
               ))}
             </div>
           </div>
-        </div>
+        </HardwarePanel>
 
-        {/* 4 KPI Cards */}
-        <div className="sw-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
-
-          {/* 1 · Faturamento Bruto */}
-          <div className="sw-kpi-card">
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-              background: 'var(--sw-blue)', borderRadius: '18px 18px 0 0',
-              boxShadow: '0 0 8px rgba(26,110,250,.6)',
-            }} />
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div className="sw-hw-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M3 12V8M6 12V5M9 12V7M12 12V3"/>
-                  </svg>
-                </div>
-                <div className="sw-val-lcd">
-                  <div className="sw-kpi-val">{moeda(totalBruto)}</div>
-                </div>
-                <div className="sw-kpi-label">Faturamento Bruto</div>
-                <DeltaBadge delta={deltaMes} />
-              </div>
-              <VuMeter value={totalBruto} max={vuMaxBruto} />
-            </div>
-          </div>
-
-          {/* 2 · Lucro Líquido */}
-          <div className="sw-kpi-card">
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-              background: 'var(--sw-green)', borderRadius: '18px 18px 0 0',
-              boxShadow: '0 0 8px rgba(40,205,65,.6)',
-            }} />
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div className="sw-hw-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <rect x="2" y="4" width="12" height="9" rx="1.5"/>
-                    <path d="M8 7v3M6.5 8.5h3"/>
-                  </svg>
-                </div>
-                <div className="sw-val-lcd">
-                  <div className="sw-kpi-val" style={{ color: '#1A8C36' }}>{moeda(lucroLiquido)}</div>
-                </div>
-                <div className="sw-kpi-label">Lucro Líquido</div>
-                {totalBruto > 0 && (
-                  <span className="sw-badge sw-badge-up">
-                    ▲ {Math.round((lucroLiquido / totalBruto) * 100)}% de margem
-                  </span>
-                )}
-              </div>
-              <VuMeter value={lucroLiquido > 0 ? lucroLiquido : 0} max={vuMaxBruto} />
-            </div>
-          </div>
-
-          {/* 3 · A Receber */}
-          <div className="sw-kpi-card">
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-              background: 'var(--sw-orange)', borderRadius: '18px 18px 0 0',
-              boxShadow: '0 0 8px rgba(255,98,0,.5)',
-            }} />
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div className="sw-hw-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M8 2v12M5 10l3 3 3-3M3 6h10"/>
-                  </svg>
-                </div>
-                <div className="sw-val-lcd">
-                  <div className="sw-kpi-val" style={{ color: 'var(--sw-orange)' }}>{moeda(granaAReceber)}</div>
-                </div>
-                <div className="sw-kpi-label">A Receber (Pendente)</div>
-                {pendentes.length > 0 && (
-                  <span className="sw-badge sw-badge-pend">● {pendentes.length} show{pendentes.length !== 1 ? 's' : ''} futuros</span>
-                )}
-              </div>
-              <VuMeter value={granaAReceber} max={vuMaxBruto} color="var(--sw-orange)" />
-            </div>
-          </div>
-
-          {/* 4 · Shows */}
-          <div className="sw-kpi-card">
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-              background: 'var(--sw-purple)', borderRadius: '18px 18px 0 0',
-              boxShadow: '0 0 8px rgba(123,92,245,.5)',
-            }} />
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div className="sw-hw-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <circle cx="8" cy="8" r="6"/>
-                    <circle cx="8" cy="8" r="2"/>
-                    <path d="M8 2v1M8 13v1M2 8h1M13 8h1"/>
-                  </svg>
-                </div>
-                <div className="sw-val-lcd">
-                  <div className="sw-kpi-val" style={{ color: 'var(--sw-purple)' }}>
-                    {confirmados.length}{' '}
-                    <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--sw-text2)' }}>sets</span>
+        {/* Composição do Lucro */}
+        <HardwarePanel delay={0.2} variant="default">
+          <div className="p-5">
+            <SectionHeader title="Composição do Cache" />
+            <div className="flex items-center justify-center gap-6">
+              <DonutChart
+                data={donutData}
+                centerLabel="Total"
+                centerValue={moedaCurta(totalBruto)}
+              />
+              <div className="space-y-2.5">
+                {donutData.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                         style={{ background: d.color, boxShadow: `0 0 4px ${d.color}` }} />
+                    <div>
+                      <div className="text-[10px] text-muted-foreground font-display uppercase tracking-wider">{d.label}</div>
+                      <div className="font-display text-[12px] font-bold" style={{ color: d.color }}>
+                        {moeda(d.value)}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="sw-kpi-label">Shows Confirmados</div>
-                {showsAno.length > confirmados.length && (
-                  <span className="sw-badge sw-badge-flat">+ {showsAno.length - confirmados.length} pendentes</span>
-                )}
+                ))}
               </div>
-              <VuMeter value={confirmados.length} max={Math.max(showsAno.length, 1)} color="var(--sw-purple)" />
             </div>
           </div>
-        </div>
+        </HardwarePanel>
 
-        <div className="sw-divider" />
+        {/* Radar de desempenho */}
+        <HardwarePanel delay={0.3} variant="brushed">
+          <div className="p-5">
+            <SectionHeader title="Desempenho · Radar" />
+            <PerformanceRadar data={radarData} />
+          </div>
+        </HardwarePanel>
+      </div>
 
-        {/* ── Distribution + Composition ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 28 }}>
-
-          {/* Distribuição de Receita */}
-          <div>
-            <div className="sw-section-label">Distribuição de Receita</div>
-
+      {/* ══ ROW 3: CHANNEL STRIP (KNOBS) ══ */}
+      <HardwarePanel delay={0.2} variant="carbon" className="w-full">
+        <div className="p-6">
+          <SectionHeader title="Channel Strip · Distribuição" />
+          <div className="flex items-center justify-around gap-4">
             {[
-              { label: 'Lucro DJ',           valor: lucroLiquido > 0 ? lucroLiquido : 0, pctVal: totalBruto ? Math.round((lucroLiquido / totalBruto) * 100) : 0, cor: 'var(--sw-blue)' },
-              { label: `Daniel (${new Date() >= INICIO_PERCENTUAL_20 ? '20' : '15'}% base líq.)`, valor: totalDaniel, pctVal: totalBruto ? Math.round((totalDaniel / totalBruto) * 100) : 0, cor: '#FF9F0A' },
-              { label: 'Yuri (R$300/show)',  valor: totalYuri,    pctVal: totalBruto ? Math.round((totalYuri / totalBruto) * 100) : 0,    cor: 'var(--sw-green)' },
-              { label: 'Custos Operacionais',valor: totalCustos,  pctVal: totalBruto ? Math.round((totalCustos / totalBruto) * 100) : 0,  cor: 'var(--sw-red)' },
-            ].map((row, i) => (
-              <div key={i} className="sw-fin-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <div className="sw-fin-dot" style={{ background: row.cor, color: row.cor }} />
-                  <span style={{ fontSize: 12, fontWeight: 500 }}>{row.label}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 10, color: 'var(--sw-text3)', fontFamily: "'JetBrains Mono',monospace" }}>
-                    {row.pctVal}%
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
-                    {moeda(row.valor)}
+              { color: 'hsl(217 90% 55%)', label: 'DJ',     value: Math.max(lucroLiquido, 0) },
+              { color: 'hsl(30 95% 55%)',  label: 'Daniel', value: totalDaniel },
+              { color: 'hsl(150 70% 45%)', label: 'Yuri',   value: totalYuri },
+              { color: 'hsl(0 75% 55%)',   label: 'Custos', value: totalCustos },
+            ].map((ch, i) => (
+              <div key={i} className="flex flex-col items-center gap-3">
+                <Knob
+                  color={ch.color}
+                  label={ch.label}
+                  value={moedaCurta(ch.value)}
+                  size={52}
+                  rotation={knobPct(ch.value)}
+                  animate={true}
+                />
+                {/* Fader track */}
+                <div className="flex flex-col items-center gap-1 w-10">
+                  <VuMeter
+                    value={ch.value}
+                    max={Math.max(totalBruto, 1)}
+                    segments={13}
+                    vertical={true}
+                    animate={true}
+                  />
+                  <span className="text-[8px] font-display uppercase tracking-wider text-muted-foreground">
+                    {knobPct(ch.value)}%
                   </span>
                 </div>
               </div>
             ))}
+
+            {/* Master output */}
+            <div className="flex flex-col items-center gap-3 pl-8 border-l border-border/30">
+              <div className="text-[10px] font-display uppercase tracking-wider text-muted-foreground mb-1">Master</div>
+              <div className="flex gap-2">
+                <VuMeter value={totalBruto} max={Math.max(totalBruto, 1000)} segments={13} animate={true} />
+                <VuMeter value={totalBruto} max={Math.max(totalBruto, 1000)} segments={13} animate={true} />
+              </div>
+              <div className="font-display text-[16px] font-bold text-foreground"
+                   style={{ textShadow: '0 0 8px hsl(217 90% 55% / 0.4)' }}>
+                {moeda(totalBruto)}
+              </div>
+            </div>
           </div>
+        </div>
+      </HardwarePanel>
 
-          {/* Composição do Cache */}
-          <div>
-            <div className="sw-section-label">Composição do Cache</div>
-            <StackedBar segments={composicaoSegments} />
+      {/* ══ ROW 4: CHARTS ══ */}
+      <div className="grid grid-cols-2 gap-4">
+        <HardwarePanel delay={0.25} variant="default">
+          <div className="p-5">
+            <SectionHeader
+              title="Gigs por Mês"
+              right={
+                <div className="flex gap-3 text-[10px] font-display text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-sm inline-block" style={{ background: 'hsl(217 90% 55%)' }} /> Confirmado
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-sm inline-block opacity-60"
+                          style={{ background: 'hsl(30 95% 55%)' }} /> Pendente
+                  </span>
+                </div>
+              }
+            />
+            <FaderChart data={gigsPorMes} currentMonth={mesAtual} />
+          </div>
+        </HardwarePanel>
 
-            {/* Knobs row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
-              <Knob color="blue"   rotate={totalBruto ? Math.round((lucroLiquido / totalBruto) * 270) - 135 : 0}   label="DJ"     value={moedaCurta(lucroLiquido > 0 ? lucroLiquido : 0)} />
-              <Knob color="orange" rotate={totalBruto ? Math.round((totalDaniel  / totalBruto) * 270) - 135 : 40}  label="Daniel" value={moedaCurta(totalDaniel)} />
-              <Knob color="green"  rotate={totalBruto ? Math.round((totalYuri    / totalBruto) * 270) - 135 : -20} label="Yuri"   value={moedaCurta(totalYuri)} />
-              <Knob color="red"    rotate={totalBruto ? Math.round((totalCustos  / totalBruto) * 270) - 135 : 60}  label="Custos" value={moedaCurta(totalCustos)} />
-              <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,.06)', marginTop: -14 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 18, fontWeight: 700, letterSpacing: '-.02em', color: 'var(--sw-text1)' }}>
+        <HardwarePanel delay={0.3} variant="default">
+          <div className="p-5">
+            <SectionHeader
+              title="Faturamento Mensal"
+              right={
+                <div className="font-display text-[13px] font-bold"
+                     style={{ color: 'hsl(217 90% 55%)', textShadow: '0 0 8px hsl(217 90% 55% / 0.4)' }}>
                   {moeda(totalBruto)}
                 </div>
-                <div style={{ fontSize: 9, color: 'var(--sw-text3)', letterSpacing: '.07em', textTransform: 'uppercase' }}>
-                  Total Cache
-                </div>
-              </div>
+              }
+            />
+            <WaveformChart data={waveformData} />
+            <div className="flex gap-4 mt-3 text-[10px] font-display text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 inline-block" style={{ background: 'hsl(217 90% 55%)' }} /> Cache Total
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 inline-block" style={{ background: 'hsl(30 95% 55%)' }} /> Lucro DJ
+              </span>
             </div>
           </div>
-        </div>
+        </HardwarePanel>
       </div>
 
-      {/* ══ PANEL 2: CHARTS ROW ══ */}
-      <div className="sw-charts-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1.7fr', gap: 18 }}>
+      {/* ══ ROW 5: RANKING + PROJEÇÃO + ÚLTIMOS SETS ══ */}
+      <div className="grid grid-cols-3 gap-4">
 
-        {/* Gigs por Mês */}
-        <div className="sw-panel" style={{ padding: '22px 22px 18px' }}>
-          <Screw pos="tl" /><Screw pos="tr" />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-.01em' }}>Gigs por Mês</div>
-              <div style={{ fontSize: 9, color: 'var(--sw-text3)', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 2 }}>
-                · {anoSel} ·
-              </div>
-            </div>
-            <span className="sw-engrave">SHOWS</span>
-          </div>
-
-          <FaderBarChart dados={gigsPorMes} mesAtual={mesAtual} />
-
-          <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
-              <span style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--sw-blue)', display: 'inline-block', boxShadow: '0 0 4px rgba(26,110,250,.6)' }} />
-              Confirmado
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
-              <span style={{ width: 10, height: 10, borderRadius: 3, display: 'inline-block', background: 'repeating-linear-gradient(45deg,rgba(255,98,0,.5) 0,rgba(255,98,0,.5) 3px,rgba(255,98,0,.12) 3px,rgba(255,98,0,.12) 6px)' }} />
-              Pendente
-            </span>
-          </div>
-        </div>
-
-        {/* Faturamento Mensal — Waveform */}
-        <div className="sw-panel" style={{ padding: '22px 22px 18px' }}>
-          <Screw pos="tl" /><Screw pos="tr" />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-.01em' }}>Faturamento Mensal</div>
-              <div style={{ fontSize: 9, color: 'var(--sw-text3)', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 2 }}>
-                · Histórico {anoSel} ·
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="sw-engrave">LCD</span>
-              <div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, fontWeight: 800, color: 'var(--sw-blue)', letterSpacing: '-.01em' }}>
-                  {moeda(totalBruto)}
-                </div>
-                <div style={{ fontSize: 8, color: 'var(--sw-text3)', letterSpacing: '.07em', textAlign: 'right' }}>TOTAL ANO</div>
-              </div>
-            </div>
-          </div>
-
-          <WaveformChart dados={waveformData} />
-
-          {/* Legend */}
-          <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
-              <span style={{ width: 16, height: 2, borderRadius: 2, background: 'var(--sw-blue)', display: 'inline-block' }} /> Cache Bruto
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
-              <span style={{ width: 16, height: 2, borderRadius: 2, background: '#FF9F0A', display: 'inline-block', opacity: .7 }} /> Lucro Líquido
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--sw-text2)' }}>
-              Média: <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, marginLeft: 2 }}>{moeda(mediaCache)}</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ══ PANEL 3: RANKING + TIMELINE ══ */}
-      <div className="sw-bottom-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-
-        {/* Ranking de Contratantes */}
-        <div className="sw-panel" style={{ padding: '22px 24px' }}>
-          <Screw pos="tl" /><Screw pos="tr" />
-          <div className="sw-panel-head">
-            <span style={{ fontSize: 13, fontWeight: 700 }}>🏆 Ranking de Contratantes</span>
-            <span className="sw-engrave">TOP {topContratantes.length}</span>
-          </div>
-          {topContratantes.length === 0 && <p className="sw-empty">Nenhum dado ainda</p>}
-          {topContratantes.map(([nome, d], i) => {
-            const maxShows = topContratantes[0]?.[1]?.shows || 1;
-            const barra = Math.round((d.shows / maxShows) * 100);
-            return (
-              <div key={i} className="sw-rank-item">
-                <span className="sw-rank-pos" style={{ color: rankColors[i] }}>#{i + 1}</span>
-                <div className="sw-rank-info">
-                  <div className="sw-rank-nome">{nome}</div>
-                  <div className="sw-rank-bar-track">
-                    <div className="sw-rank-bar-fill" style={{ width: `${barra}%`, background: rankColors[i] }} />
+        {/* Ranking contratantes */}
+        <HardwarePanel delay={0.3} variant="carbon">
+          <div className="p-5">
+            <SectionHeader
+              title="Ranking Contratantes"
+              right={<span className="text-[10px] font-display text-muted-foreground">{anoSel}</span>}
+            />
+            <div className="space-y-2">
+              {topContratantes.length === 0 && (
+                <p className="text-[12px] text-muted-foreground font-display">Sem dados</p>
+              )}
+              {topContratantes.map((c, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
+                  <span className="font-display text-[11px] font-bold w-4 flex-shrink-0"
+                        style={{ color: rankColors[i] }}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium text-foreground truncate">{c.nome}</div>
+                    <div className="w-full mt-1 h-1 rounded-full overflow-hidden"
+                         style={{ background: 'hsl(220 8% 12%)' }}>
+                      <div className="h-full rounded-full transition-all duration-700"
+                           style={{
+                             width: `${topContratantes[0].shows > 0 ? (c.shows / topContratantes[0].shows) * 100 : 0}%`,
+                             background: rankColors[i],
+                             boxShadow: `0 0 6px ${rankColors[i]}60`,
+                           }} />
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-display text-[12px] font-bold text-foreground">{moedaCurta(c.cache)}</div>
+                    <div className="text-[10px] text-muted-foreground">{c.shows} sets</div>
                   </div>
                 </div>
-                <div className="sw-rank-nums">
-                  <span className="sw-rank-shows">{d.shows} set{d.shows !== 1 ? 's' : ''}</span>
-                  <span className="sw-rank-cache">{moeda(d.cache)}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Últimos Sets */}
-        <div className="sw-panel" style={{ padding: '22px 24px' }}>
-          <Screw pos="tl" /><Screw pos="tr" />
-          <div className="sw-panel-head">
-            <span style={{ fontSize: 13, fontWeight: 700 }}>⏱ Últimos Sets</span>
-            <span className="sw-engrave">RECENTES</span>
-          </div>
-          {ultimosShows.length === 0 && <p className="sw-empty">Nenhum show confirmado ainda</p>}
-          {ultimosShows.map((s) => (
-            <div key={s.id} className="sw-timeline-item">
-              <div className="sw-timeline-dot" />
-              <div className="sw-timeline-body">
-                <div className="sw-timeline-evento">{s.evento || '—'}</div>
-                <div className="sw-timeline-meta">
-                  <span>{new Date(s.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
-                  {s.contratante && <span>· {s.contratante}</span>}
-                </div>
-              </div>
-              <div className="sw-timeline-cache">
-                {s.cache ? moeda(s.cache) : <span style={{ opacity: 0.3 }}>—</span>}
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </HardwarePanel>
 
-      {/* ══ PANEL 4: PROJEÇÃO ══ */}
-      {projecao.length > 0 && (
-        <div className="sw-panel" style={{ padding: '22px 24px' }}>
-          <Screw pos="tl" /><Screw pos="tr" />
-          <div className="sw-panel-head">
-            <span style={{ fontSize: 13, fontWeight: 700 }}>🔮 Projeção de Faturamento</span>
-            <span className="sw-engrave">FORECAST</span>
+        {/* Projeção */}
+        <HardwarePanel delay={0.35} variant="default">
+          <div className="p-5">
+            <SectionHeader title="Projeção" />
+            {projecao.length > 0 ? (
+              <ProjecaoModule data={projecao} />
+            ) : (
+              <p className="text-[12px] text-muted-foreground font-display">Sem projeção disponível</p>
+            )}
           </div>
-          <div className="sw-projecao-grid">
-            {projecao.map((p, i) => (
-              <div key={i} className={`sw-proj-item ${p.passado ? 'sw-proj-passado' : 'sw-proj-futuro'}`}>
-                <div className="sw-proj-mes">{p.nomeMes}</div>
-                <div className="sw-proj-valor">{moeda(p.totalAgendado)}</div>
-                <div className="sw-proj-shows">{p.quantidadeShows} set{p.quantidadeShows !== 1 ? 's' : ''}</div>
-                {!p.passado && p.totalAgendado > 0 && (
-                  <div className="sw-proj-badge">Agendado</div>
-                )}
-              </div>
-            ))}
+        </HardwarePanel>
+
+        {/* Últimos sets */}
+        <HardwarePanel delay={0.4} variant="brushed">
+          <div className="p-5">
+            <SectionHeader title="Últimos Sets" />
+            <div className="space-y-2">
+              {ultimosShows.length === 0 && (
+                <p className="text-[12px] text-muted-foreground font-display">Sem shows confirmados</p>
+              )}
+              {ultimosShows.map((s, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-secondary/30 transition-colors">
+                  <div className="w-1.5 h-8 rounded-full flex-shrink-0"
+                       style={{
+                         background: rankColors[i % rankColors.length],
+                         boxShadow: `0 0 6px ${rankColors[i % rankColors.length]}60`,
+                       }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium text-foreground truncate">
+                      {s.evento || 'Show'}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate">
+                      {s.contratante} · {s.data}
+                    </div>
+                  </div>
+                  <div className="font-display text-[12px] font-bold flex-shrink-0"
+                       style={{ color: rankColors[i % rankColors.length] }}>
+                    {moedaCurta(s.cache || 0)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        </HardwarePanel>
+      </div>
 
     </div>
   );

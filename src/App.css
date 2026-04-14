@@ -335,11 +335,16 @@ body::after {
    MAIN CONTAINER
    ══════════════════════════════════════════════════════════════════════════ */
 .main {
-  max-width: 1020px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 28px 24px 60px;
   position: relative;
   z-index: 1;
+}
+
+/* Dashboard takes full width with no extra padding */
+.main .dj-dash-wrapper {
+  margin: -28px -24px;
 }
 
 .page { display: flex; flex-direction: column; gap: 20px; }
