@@ -444,7 +444,9 @@ export default function DashboardPage({ shows }) {
                     <path d="M3 12V8M6 12V5M9 12V7M12 12V3"/>
                   </svg>
                 </div>
-                <div className="sw-kpi-val">{moeda(totalBruto)}</div>
+                <div className="sw-val-lcd">
+                  <div className="sw-kpi-val">{moeda(totalBruto)}</div>
+                </div>
                 <div className="sw-kpi-label">Faturamento Bruto</div>
                 <DeltaBadge delta={deltaMes} />
               </div>
@@ -467,7 +469,9 @@ export default function DashboardPage({ shows }) {
                     <path d="M8 7v3M6.5 8.5h3"/>
                   </svg>
                 </div>
-                <div className="sw-kpi-val" style={{ color: '#1A8C36' }}>{moeda(lucroLiquido)}</div>
+                <div className="sw-val-lcd">
+                  <div className="sw-kpi-val" style={{ color: '#1A8C36' }}>{moeda(lucroLiquido)}</div>
+                </div>
                 <div className="sw-kpi-label">Lucro Líquido</div>
                 {totalBruto > 0 && (
                   <span className="sw-badge sw-badge-up">
@@ -493,7 +497,9 @@ export default function DashboardPage({ shows }) {
                     <path d="M8 2v12M5 10l3 3 3-3M3 6h10"/>
                   </svg>
                 </div>
-                <div className="sw-kpi-val" style={{ color: 'var(--sw-orange)' }}>{moeda(granaAReceber)}</div>
+                <div className="sw-val-lcd">
+                  <div className="sw-kpi-val" style={{ color: 'var(--sw-orange)' }}>{moeda(granaAReceber)}</div>
+                </div>
                 <div className="sw-kpi-label">A Receber (Pendente)</div>
                 {pendentes.length > 0 && (
                   <span className="sw-badge sw-badge-pend">● {pendentes.length} show{pendentes.length !== 1 ? 's' : ''} futuros</span>
@@ -519,9 +525,11 @@ export default function DashboardPage({ shows }) {
                     <path d="M8 2v1M8 13v1M2 8h1M13 8h1"/>
                   </svg>
                 </div>
-                <div className="sw-kpi-val" style={{ color: 'var(--sw-purple)' }}>
-                  {confirmados.length}{' '}
-                  <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--sw-text2)' }}>sets</span>
+                <div className="sw-val-lcd">
+                  <div className="sw-kpi-val" style={{ color: 'var(--sw-purple)' }}>
+                    {confirmados.length}{' '}
+                    <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--sw-text2)' }}>sets</span>
+                  </div>
                 </div>
                 <div className="sw-kpi-label">Shows Confirmados</div>
                 {showsAno.length > confirmados.length && (
