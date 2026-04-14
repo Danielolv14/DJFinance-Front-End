@@ -55,10 +55,23 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <div className="logo">
-            <span className="logo-icon">🎧</span>
-            <span className="logo-text">DJFinance</span>
-            <span className="logo-sub">Financeiro</span>
+            <div className="logo-icon-wrap">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="7" stroke="white" strokeWidth="1.4"/>
+                <circle cx="10" cy="10" r="3" fill="white"/>
+                <circle cx="10" cy="10" r="1.2" fill="#0E0F12"/>
+                <line x1="10" y1="3" x2="10" y2="1.2" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="10" y1="18.8" x2="10" y2="17" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="1.2" y1="10" x2="3" y2="10" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+                <line x1="17" y1="10" x2="18.8" y2="10" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <div className="logo-text">DJFinance</div>
+              <div className="logo-sub">Studio Edition</div>
+            </div>
           </div>
+
           <nav className="nav">
             {ABAS.map(a => (
               <button key={a.id}
@@ -72,6 +85,11 @@ export default function App() {
               </button>
             ))}
           </nav>
+
+          <div className="header-status">
+            <div className="header-led" />
+            ONLINE
+          </div>
         </div>
       </header>
 

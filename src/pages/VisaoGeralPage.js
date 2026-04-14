@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react';
 import { deleteShow } from '../services/api';
 
 const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const STATUS_COR  = { CONFIRMADO:'#34d399', PENDENTE:'#fbbf24', CANCELADO:'#f87171' };
-const STATUS_BG   = { CONFIRMADO:'rgba(52,211,153,.15)', PENDENTE:'rgba(251,191,36,.15)', CANCELADO:'rgba(248,113,113,.15)' };
+const STATUS_COR  = { CONFIRMADO:'#1A8C36', PENDENTE:'#9A7C00', CANCELADO:'#CC2A20' };
+const STATUS_BG   = { CONFIRMADO:'rgba(40,205,65,.12)', PENDENTE:'rgba(255,214,10,.12)', CANCELADO:'rgba(255,59,47,.1)' };
 
 function moeda(v) {
   return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
@@ -100,12 +100,12 @@ export default function VisaoGeralPage({ shows, onEditar, onAtualizar }) {
 
       <div className="kpi-grid">
         {[
-          { icon:'🎵', val: shows.length,              label:'Total de Shows',  cor:'var(--accent)', bg:'rgba(124,106,255,.15)' },
-          { icon:'✅', val: confirmados.length,         label:'Confirmados',    cor:'var(--green)',  bg:'rgba(52,211,153,.15)' },
-          { icon:'⏳', val: pendentes.length,           label:'Pendentes',      cor:'var(--yellow)', bg:'rgba(251,191,36,.15)' },
-          { icon:'💰', val: moeda(totalCache),          label:'Total em Cachê', cor:'var(--blue)',   bg:'rgba(96,165,250,.15)' },
-          { icon:'📈', val: moeda(mediaCacheShow),      label:'Média por Show', cor:'var(--yellow)', bg:'rgba(251,191,36,.15)' },
-          { icon:'❌', val: cancelados.length,          label:'Cancelados',     cor:'var(--red)',    bg:'rgba(248,113,113,.15)' },
+          { icon:'🎵', val: shows.length,              label:'Total de Shows',  cor:'var(--accent)', bg:'var(--blue-bg)' },
+          { icon:'✅', val: confirmados.length,         label:'Confirmados',    cor:'#1A8C36',       bg:'var(--green-bg)' },
+          { icon:'⏳', val: pendentes.length,           label:'Pendentes',      cor:'#9A7C00',       bg:'var(--yellow-bg)' },
+          { icon:'💰', val: moeda(totalCache),          label:'Total em Cachê', cor:'var(--blue)',   bg:'var(--blue-bg)' },
+          { icon:'📈', val: moeda(mediaCacheShow),      label:'Média por Show', cor:'var(--orange)', bg:'rgba(255,98,0,.1)' },
+          { icon:'❌', val: cancelados.length,          label:'Cancelados',     cor:'#CC2A20',       bg:'var(--red-bg)' },
         ].map((k,i) => (
           <div key={i} className="kpi-card">
             <div className="kpi-icon" style={{background:k.bg, color:k.cor}}>{k.icon}</div>
@@ -127,18 +127,18 @@ export default function VisaoGeralPage({ shows, onEditar, onAtualizar }) {
             <div className="chart-title">📊 Distribuição por Status</div>
             <div style={{display:'flex', flexDirection:'column', gap:12, marginTop:8}}>
               {[
-                {label:'Confirmados', val:confirmados.length, cor:'var(--green)'},
-                {label:'Pendentes',   val:pendentes.length,   cor:'var(--yellow)'},
-                {label:'Cancelados',  val:cancelados.length,  cor:'var(--red)'},
+                {label:'Confirmados', val:confirmados.length, cor:'#1A8C36'},
+                {label:'Pendentes',   val:pendentes.length,   cor:'#9A7C00'},
+                {label:'Cancelados',  val:cancelados.length,  cor:'#CC2A20'},
               ].map((s,i) => {
                 const pct = shows.length ? Math.round((s.val/shows.length)*100) : 0;
                 return (
                   <div key={i} style={{display:'flex', alignItems:'center', gap:10}}>
                     <div style={{width:90, fontSize:12, color:s.cor, fontWeight:600}}>{s.label}</div>
-                    <div style={{flex:1, height:6, background:'var(--bg-input)', borderRadius:3, overflow:'hidden'}}>
+                    <div style={{flex:1, height:6, background:'var(--bg-input)', borderRadius:3, overflow:'hidden', boxShadow:'inset 1px 1px 3px rgba(0,0,0,.08)'}}>
                       <div style={{width:`${pct}%`, height:'100%', background:s.cor, borderRadius:3}}/>
                     </div>
-                    <div style={{fontSize:12, fontFamily:'DM Mono, monospace', minWidth:50, textAlign:'right', color:'var(--text)'}}>
+                    <div style={{fontSize:12, fontFamily:"'JetBrains Mono', monospace", minWidth:50, textAlign:'right', color:'var(--text)'}}>
                       {s.val} ({pct}%)
                     </div>
                   </div>
