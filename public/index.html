@@ -3,10 +3,55 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DRUDS — Fechamento Financeiro</title>
+    <title>DJFinance — Studio Edition</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['JetBrains Mono', 'monospace'],
+              body: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              border:      'hsl(220 8% 16%)',
+              background:  'hsl(220 12% 5%)',
+              foreground:  'hsl(220 15% 85%)',
+              primary: {
+                DEFAULT:    'hsl(217 90% 55%)',
+                foreground: 'hsl(0 0% 100%)',
+              },
+              secondary: {
+                DEFAULT:    'hsl(220 8% 14%)',
+                foreground: 'hsl(220 15% 80%)',
+              },
+              muted: {
+                DEFAULT:    'hsl(220 7% 16%)',
+                foreground: 'hsl(220 10% 45%)',
+              },
+              led: {
+                blue:   'hsl(217 90% 55%)',
+                green:  'hsl(150 70% 45%)',
+                orange: 'hsl(30 95% 55%)',
+                purple: 'hsl(270 70% 60%)',
+                red:    'hsl(0 75% 55%)',
+              },
+              surface: {
+                1: 'hsl(220 10% 7%)',
+                2: 'hsl(220 9% 11%)',
+                3: 'hsl(220 8% 15%)',
+              },
+            },
+            animation: {
+              'spin-slow': 'spin 4s linear infinite',
+            },
+          },
+        },
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
