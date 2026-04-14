@@ -253,7 +253,11 @@ function Knob({ color, rotate = 0, label, value }) {
         boxShadow: 'inset 2px 2px 5px rgba(0,0,0,.25), inset -1px -1px 3px rgba(255,255,255,.50)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div className={`sw-knob sw-knob-${color}`}>
+        {/* --knob-rotate faz o conic-gradient girar junto com o indicador */}
+        <div
+          className={`sw-knob sw-knob-${color}`}
+          style={{ '--knob-rotate': `${rotate}deg` }}
+        >
           <div
             className="sw-knob-indicator"
             style={{ transform: `translateX(-50%) rotate(${rotate}deg)`, transformOrigin: '50% 100%' }}
