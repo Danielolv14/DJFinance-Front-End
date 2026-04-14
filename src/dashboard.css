@@ -8,17 +8,19 @@
 
 /* ── Design Tokens ── */
 :root {
-  /* Surfaces — pearl industrial aluminum, NOT white */
-  --sw-bg:       #D8DAE0;   /* chassis floor — slightly darker   */
-  --sw-card:     #E2E4E9;   /* face plate — pearl gray           */
-  --sw-card-hi:  #EDEEF2;   /* raised micro-surface              */
-  --sw-inset:    #CFD1D9;   /* recessed pocket                   */
-  --sw-border:   #C8CAD2;   /* engraved line
+  /* Surfaces — #D1D5DB é o painel de metal. Tudo que fica ACIMA usa
+     a mesma cor ou levemente mais claro. O efeito de profundidade vem
+     das sombras INTERNAS (inset), não de elevação externa.           */
+  --sw-bg:       #D1D5DB;   /* chassis — metal cinza (cor base)          */
+  --sw-card:     #D6DADF;   /* cavidade: levemente mais claro que o piso */
+  --sw-card-hi:  #DCE0E5;   /* micro-superfície elevada dentro da cav.   */
+  --sw-inset:    #C8CCD2;   /* bolso mais fundo                          */
+  --sw-border:   #B8BBC2;   /* corte de metal                            */
 
   /* Text */
   --sw-text1:    #1A1B1F;
-  --sw-text2:    #6B6D7A;
-  --sw-text3:    #A8AAB6;
+  --sw-text2:    #5A5C68;
+  --sw-text3:    #8A8C98;
 
   /* Accents */
   --sw-blue:     #1A6EFA;
@@ -29,59 +31,51 @@
   --sw-red:      #FF3B2F;
   --sw-purple:   #7B5CF5;
 
-  /* Shadow components */
-  --sw-sh-light: rgba(255,255,255,.85);
-  --sw-sh-dark:  rgba(0,0,0,.14);
+  /* Shadow physics */
+  --sw-sh-light: rgba(255,255,255,.72);
+  --sw-sh-dark:  rgba(0,0,0,.20);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   DASHBOARD WRAPPER — light bg full bleed
+   DASHBOARD WRAPPER
+   Fundo é o próprio metal. Os painéis são cavidades esculpidas nele.
    ══════════════════════════════════════════════════════════════════════════ */
 .dj-dash {
   font-family: 'Inter', -apple-system, sans-serif;
   color: var(--sw-text1);
+  background: var(--sw-bg);   /* #D1D5DB — painel de metal uniforme */
   display: flex;
   flex-direction: column;
   gap: 18px;
   position: relative;
+  padding: 24px;
+  border-radius: 4px;
 }
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   NEUMORPHIC PANEL
+   PANEL = CAVITY ESCULPIDA NO METAL
+   Sem sombra externa. A profundidade vem 100% de inset shadows.
+   Borda é o corte do metal: escura em cima/esquerda, clara embaixo/direita.
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-panel {
-  background: var(--sw-card);           /* #E2E4E9 — pearl aluminum, not white */
-  border-radius: 20px;
-  /* Quina chanfrada: borda branca brilhante simula biseau da aresta */
-  border: 1px solid rgba(255,255,255,.92);
+  background: var(--sw-card);       /* levemente mais claro que o chassis */
+  border-radius: 14px;
+  /* Corte no metal: top/left escuros (sombra), bottom/right claros (luz) */
+  border-top:    1px solid rgba(0,0,0,.18);
+  border-left:   1px solid rgba(0,0,0,.14);
+  border-bottom: 1px solid rgba(255,255,255,.65);
+  border-right:  1px solid rgba(255,255,255,.55);
+  /* Profundidade da cavidade — inset only, ZERO glow externo */
   box-shadow:
-    /* sombra externa fina e escura — cria ilusão de espessura */
-    0 2px 6px rgba(0,0,0,.22),
-    0 1px 2px rgba(0,0,0,.14),
-    /* neumorphism clássico */
-    -6px -6px 16px rgba(255,255,255,.85),
-     6px  6px 16px rgba(0,0,0,.13),
-    /* highlight interno no topo */
-    inset 0 1px 0 rgba(255,255,255,.65);
+    inset 4px  4px 10px rgba(0,0,0,.20),
+    inset -2px -2px  5px rgba(255,255,255,.70);
   position: relative;
   overflow: hidden;
 }
 
-/* Gloss top-left sheen — luz rasante sobre alumínio polido */
-.sw-panel::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  background: linear-gradient(150deg,
-    rgba(255,255,255,.22) 0%,
-    rgba(255,255,255,.06) 30%,
-    transparent 60%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
+/* Sem pseudo-elemento de gloss — equipamento industrial não brilha */
+.sw-panel::after { display: none; }
 
 /* Inset / pressed surface (LCD screen effect) */
 .sw-inset {
@@ -93,74 +87,85 @@
     inset -2px -2px 6px rgba(255,255,255,.7);
 }
 
-/* ══ LCD VALUE DISPLAY — "buraco cortado no metal" ══
-   Use em torno do sw-kpi-val para criar a ilusão de visor
-   embutido por baixo da chapa de alumínio.                */
+/* ══ LCD VALUE DISPLAY — visor digital embutido ══
+   Fundo escuro estilo display industrial. A sombra interna profunda
+   simula o vidro protetor sobre o display.                          */
 .sw-val-lcd {
-  background: #CBCDD5;         /* fundo do LCD: mais escuro que o card      */
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,.12);
+  background: #1C2420;         /* escuro esverdeado — display digital        */
+  border-radius: 6px;
+  border-top:  1px solid rgba(0,0,0,.45);
+  border-left: 1px solid rgba(0,0,0,.35);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  border-right:  1px solid rgba(255,255,255,.06);
   padding: 7px 10px 5px;
   margin: 6px 0 4px;
   position: relative;
-  /* sombras internas que criam a profundidade de 2mm */
+  /* sombra mais profunda — vidro de 4mm em cima do LCD */
   box-shadow:
-    inset 4px  4px  8px rgba(0,0,0,.15),
-    inset -2px -2px  4px rgba(255,255,255,.80);
+    inset 5px  5px 12px rgba(0,0,0,.45),
+    inset -2px -2px  5px rgba(255,255,255,.04);
 }
 
-/* micro-reflexo no canto superior esquerdo do visor */
+/* reflexo de superfície do vidro — linha fina no topo */
 .sw-val-lcd::before {
   content: '';
   position: absolute;
-  top: 2px; left: 4px;
-  width: 40%; height: 1px;
-  background: rgba(255,255,255,.5);
+  top: 2px; left: 5px; right: 5px;
+  height: 1px;
+  background: rgba(255,255,255,.12);
   border-radius: 1px;
   pointer-events: none;
+}
+
+/* texto dentro do LCD — cor fósforo */
+.sw-val-lcd .sw-kpi-val {
+  color: #A8F0B8 !important;    /* verde fósforo para todos os visores     */
+  text-shadow: 0 0 8px rgba(100,220,120,.35);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ALLEN SCREWS
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-screw {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   flex-shrink: 0;
-  /*  Rim externo: aresta chanfrada — escuro→claro do centro pra borda  */
-  background: radial-gradient(circle at 40% 35%,
-    #A2A4AE 0%,
-    #BBBDC7 40%,
-    #D2D4DC 75%,
-    #E0E2E8 100%
+  /* Aço escovado: claro no centro, escuro na borda — sem brilho glossy */
+  background: radial-gradient(circle at 50% 50%,
+    #C8CAD0 0%,
+    #A8AAB2 45%,
+    #888A94 80%,
+    #70727A 100%
   );
+  /* Rim com corte físico: sombra na borda inferior/direita */
   box-shadow:
-    /* rim com sombra lateral — parafuso tem espessura */
-    1px 1px 2px rgba(0,0,0,.3),
-    -1px -1px 1px rgba(255,255,255,.6),
-    0 1px 3px rgba(0,0,0,.25);
+    inset 0  1px 1px rgba(255,255,255,.45),
+    inset 0 -1px 1px rgba(0,0,0,.30),
+    1px 1px 2px rgba(0,0,0,.35),
+    0   0   0 1px rgba(0,0,0,.12);
   position: absolute;
 }
 
-/* Soquete hexagonal — a cavidade do Allen, mais escura */
+/* Soquete Allen hexagonal — cavidade central escura */
 .sw-screw::before {
   content: '';
   position: absolute;
-  inset: 2.5px;
+  inset: 3px;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%,
-    #5A5C66 0%,
-    #6E707A 50%,
-    #7A7C86 100%
+  background: radial-gradient(circle at 40% 35%,
+    #3A3C44 0%,
+    #4E5058 60%,
+    #5A5C64 100%
   );
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
 }
 
-.sw-screw-tl { top: 10px;    left: 10px;  }
-.sw-screw-tr { top: 10px;    right: 10px; }
-.sw-screw-bl { bottom: 10px; left: 10px;  }
-.sw-screw-br { bottom: 10px; right: 10px; }
+.sw-screw-tl { top:  9px; left:  9px; }
+.sw-screw-tr { top:  9px; right: 9px; }
+.sw-screw-bl { bottom: 9px; left:  9px; }
+.sw-screw-br { bottom: 9px; right: 9px; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ENGRAVED LABEL
@@ -241,17 +246,18 @@
    KPI CARD
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-kpi-card {
-  background: var(--sw-card);         /* #E2E4E9 pearl gray */
-  border-radius: 16px;
-  /* quina chanfrada: borda branca brilhante + sombra externa fina */
-  border: 1px solid rgba(255,255,255,.90);
+  background: var(--sw-card);
+  border-radius: 12px;
+  /* Corte no metal — mesma física do painel pai */
+  border-top:    1px solid rgba(0,0,0,.16);
+  border-left:   1px solid rgba(0,0,0,.12);
+  border-bottom: 1px solid rgba(255,255,255,.60);
+  border-right:  1px solid rgba(255,255,255,.50);
   padding: 18px 16px 16px;
+  /* Cavidade um pouco mais rasa que o painel */
   box-shadow:
-    0 2px 5px rgba(0,0,0,.20),        /* espessura da chapa */
-    0 1px 2px rgba(0,0,0,.12),
-    -5px -5px 12px rgba(255,255,255,.85),
-     5px  5px 12px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.60);
+    inset 3px  3px  8px rgba(0,0,0,.18),
+    inset -2px -2px  4px rgba(255,255,255,.65);
   position: relative;
   overflow: hidden;
 }
