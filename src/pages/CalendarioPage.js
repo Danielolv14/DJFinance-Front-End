@@ -4,7 +4,7 @@ import BloqueioAgenda from '../components/BloqueioAgenda';
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-const STATUS_COR  = { CONFIRMADO:'var(--green)', PENDENTE:'var(--yellow)', CANCELADO:'var(--red)' };
+const STATUS_COR  = { CONFIRMADO:'#28CD41', PENDENTE:'#FFD60A', CANCELADO:'#FF3B2F' };
 
 function moeda(v) {
   return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
@@ -112,22 +112,22 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
           <span className="cal-kpi-label">Shows</span>
         </div>
         <div className="cal-kpi">
-          <span className="cal-kpi-num" style={{color:'var(--green)'}}>{confirmados.length}</span>
+          <span className="cal-kpi-num" style={{color:'#1A8C36'}}>{confirmados.length}</span>
           <span className="cal-kpi-label">Confirmados</span>
         </div>
         <div className="cal-kpi">
-          <span className="cal-kpi-num" style={{color:'var(--blue)'}}>{moeda(totalBruto)}</span>
+          <span className="cal-kpi-num" style={{color:'var(--accent)'}}>{moeda(totalBruto)}</span>
           <span className="cal-kpi-label">Total em Cachê</span>
         </div>
         <div className="cal-kpi">
-          <span className="cal-kpi-num" style={{color:'var(--yellow)'}}>
+          <span className="cal-kpi-num" style={{color:'#9A7C00'}}>
             {showsDoMes.filter(s=>s.status==='PENDENTE').length}
           </span>
           <span className="cal-kpi-label">Pendentes</span>
         </div>
         {diasBloqueados.size > 0 && (
           <div className="cal-kpi">
-            <span className="cal-kpi-num" style={{color:'var(--red)'}}>{diasBloqueados.size}</span>
+            <span className="cal-kpi-num" style={{color:'#CC2A20'}}>{diasBloqueados.size}</span>
             <span className="cal-kpi-label">Dias bloqueados</span>
           </div>
         )}
@@ -194,8 +194,8 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                 <button className="cal-fechar" onClick={() => setShowSel(null)}>×</button>
               </div>
               <span className="status-pill" style={{
-                color: STATUS_COR[showSel.status]||'var(--text-muted)',
-                background: (STATUS_COR[showSel.status]||'var(--text-muted)')+'22',
+                color: STATUS_COR[showSel.status]||'var(--text-muted, #6B6D7A)',
+                background: (STATUS_COR[showSel.status]||'var(--text-muted, #6B6D7A)')+'22',
                 marginBottom: 12, display:'inline-block'
               }}>
                 {showSel.status || 'SEM STATUS'}
@@ -216,7 +216,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
               {showSel.observacoes && (
                 <div className="cal-detalhe-obs">
                   <div className="cal-detalhe-label">📋 Observações</div>
-                  <div style={{marginTop:4, fontSize:13, color:'var(--text-muted)'}}>{showSel.observacoes}</div>
+                  <div style={{marginTop:4, fontSize:13, color:'var(--text-muted, #6B6D7A)'}}>{showSel.observacoes}</div>
                 </div>
               )}
 
@@ -240,7 +240,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
             <div className="cal-painel-vazio">
               <div style={{fontSize:32,marginBottom:8}}>👆</div>
               <div style={{fontWeight:600,marginBottom:4}}>Clique em um dia com show</div>
-              <div style={{fontSize:12,color:'var(--text-muted)'}}>para ver os detalhes</div>
+              <div style={{fontSize:12,color:'var(--text-muted, #6B6D7A)'}}>para ver os detalhes</div>
             </div>
           )}
 
@@ -257,7 +257,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                     <div className="cal-proximo-evento">{s.evento}</div>
                     <div className="cal-proximo-local">{s.contratante || s.endereco || '—'}</div>
                   </div>
-                  <div style={{color: STATUS_COR[s.status]||'var(--text-muted)', fontSize:10, fontWeight:700}}>
+                  <div style={{color: STATUS_COR[s.status]||'var(--text-muted, #6B6D7A)', fontSize:10, fontWeight:700}}>
                     {s.status}
                   </div>
                 </div>
