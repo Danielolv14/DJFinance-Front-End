@@ -141,30 +141,48 @@
 .sw-vu-seg {
   height: 5px;
   border-radius: 2px;
-  background: var(--sw-inset);
+  /* LED apagado: placa escura com sombra interna preta */
+  background: #1E2124;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.7), inset 0 0 1px rgba(0,0,0,.9);
   box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
   transition: background .2s, box-shadow .2s;
 }
 
+/* LED aceso: cor vibrante + halo de luz 8px */
 .sw-vu-seg.on-green {
-  background: var(--sw-green);
-  box-shadow: 0 0 5px rgba(40,205,65,.7), 0 0 1px rgba(40,205,65,1);
+  background: radial-gradient(ellipse at 50% 30%, #5AFF70, var(--sw-green));
+  box-shadow:
+    0 0 3px 1px rgba(40,205,65,1),
+    0 0 8px   rgba(40,205,65,.8),
+    0 0 16px  rgba(40,205,65,.35);
 }
 .sw-vu-seg.on-yellow {
-  background: var(--sw-yellow);
-  box-shadow: 0 0 5px rgba(255,214,10,.7), 0 0 1px rgba(255,214,10,1);
+  background: radial-gradient(ellipse at 50% 30%, #FFE84A, var(--sw-yellow));
+  box-shadow:
+    0 0 3px 1px rgba(255,214,10,1),
+    0 0 8px   rgba(255,214,10,.8),
+    0 0 16px  rgba(255,214,10,.35);
 }
 .sw-vu-seg.on-orange {
-  background: var(--sw-orange);
-  box-shadow: 0 0 5px rgba(255,98,0,.7), 0 0 1px rgba(255,98,0,1);
+  background: radial-gradient(ellipse at 50% 30%, #FF8C3A, var(--sw-orange));
+  box-shadow:
+    0 0 3px 1px rgba(255,98,0,1),
+    0 0 8px   rgba(255,98,0,.8),
+    0 0 16px  rgba(255,98,0,.35);
 }
 .sw-vu-seg.on-red {
-  background: var(--sw-red);
-  box-shadow: 0 0 5px rgba(255,59,47,.7), 0 0 1px rgba(255,59,47,1);
+  background: radial-gradient(ellipse at 50% 30%, #FF6B63, var(--sw-red));
+  box-shadow:
+    0 0 3px 1px rgba(255,59,47,1),
+    0 0 8px   rgba(255,59,47,.8),
+    0 0 16px  rgba(255,59,47,.35);
 }
 .sw-vu-seg.on-purple {
-  background: var(--sw-purple);
-  box-shadow: 0 0 5px rgba(123,92,245,.7), 0 0 1px rgba(123,92,245,1);
+  background: radial-gradient(ellipse at 50% 30%, #A48BFF, var(--sw-purple));
+  box-shadow:
+    0 0 3px 1px rgba(123,92,245,1),
+    0 0 8px   rgba(123,92,245,.8),
+    0 0 16px  rgba(123,92,245,.35);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
