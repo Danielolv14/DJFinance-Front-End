@@ -162,12 +162,12 @@ function FaderBarChart({ dados, mesAtual }) {
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
               className={isAtual ? 'sw-fader-active' : ''}
             >
-              {/* value label */}
+              {/* value label — claro sobre fundo escuro do LCD */}
               <div style={{
                 fontFamily: "'JetBrains Mono',monospace",
                 fontSize: 10,
-                fontWeight: isAtual ? 800 : 700,
-                color: isAtual ? 'var(--sw-blue)' : isVazio ? 'var(--sw-text3)' : 'var(--sw-text2)',
+                fontWeight: isAtual ? 800 : 600,
+                color: isAtual ? '#6AABFF' : isVazio ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.45)',
               }}>
                 {isVazio ? '—' : total}
               </div>
@@ -177,7 +177,7 @@ function FaderBarChart({ dados, mesAtual }) {
                 style={{
                   width: '100%', height: 90,
                   ...(isAtual ? {
-                    boxShadow: 'inset 2px 2px 5px rgba(0,0,0,.14),inset -1px -1px 3px rgba(255,255,255,.5),0 0 0 1.5px var(--sw-blue),0 0 12px rgba(26,110,250,.25)',
+                    boxShadow: 'inset 2px 2px 6px rgba(0,0,0,.45),inset -1px -1px 2px rgba(255,255,255,.04),0 0 0 1.5px var(--sw-blue),0 0 8px rgba(26,110,250,.35)',
                   } : {}),
                 }}
               >
@@ -190,13 +190,13 @@ function FaderBarChart({ dados, mesAtual }) {
                   <div className="sw-fader-fill sw-fader-fill-solid" style={{ height: `${hConf}%` }} />
                 )}
               </div>
-              {/* month label */}
+              {/* month label — claro sobre LCD escuro */}
               <div style={{
                 fontSize: 8,
-                fontWeight: isAtual ? 700 : 600,
-                letterSpacing: '.06em',
+                fontWeight: isAtual ? 700 : 500,
+                letterSpacing: '.08em',
                 textTransform: 'uppercase',
-                color: isAtual ? 'var(--sw-blue)' : 'var(--sw-text3)',
+                color: isAtual ? '#6AABFF' : 'rgba(255,255,255,.35)',
               }}>
                 {MESES_LABEL[i]}
               </div>

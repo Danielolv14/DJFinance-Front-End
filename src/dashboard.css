@@ -60,24 +60,22 @@
    fundo/direita claro (luz rebatendo na aresta oposta).
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-panel {
-  /* ─── Alumínio anodizado premium: 3 camadas ───────────────────────────
-     1. Ruído fractal SVG a 3% — granulado do metal anodizado
-     2. Gradiente direcional 135° — variação de luz na superfície plana
-     3. Cor base #e2e4e9
+  /* ─── Alumínio anodizado #E2E4E9 — cinza perolado industrial ──────────
+     Noise SVG 3% remove o aspecto de "cor plana de CSS".
+     Sem gradiente — a cor deve ser uniforme; a profundidade vem do inset.
      ─────────────────────────────────────────────────────────────────── */
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.80' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
-    linear-gradient(135deg, #f8f9fa 0%, #e2e4e9 100%);
+    #E2E4E9;
   border-radius: 14px;
-  /* Corte no metal: topo/esq escuro (sombra), fundo/dir claro (luz) */
-  border-top:    1px solid rgba(0,0,0,.20);
-  border-left:   1px solid rgba(0,0,0,.16);
-  border-bottom: 1px solid rgba(255,255,255,.72);
-  border-right:  1px solid rgba(255,255,255,.62);
+  /* Borda uniforme: define o limite físico do corte CNC */
+  border: 1px solid rgba(0,0,0,.05);
+  /* Spec exata: .15 topo-esq (sombra do corte) + -3px fundo-dir (luz na aresta) */
   box-shadow:
-    inset 6px  6px 12px rgba(0,0,0,.26),
-    inset -2px -2px  6px rgba(255,255,255,.78);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,.28));
+    inset  6px  6px 12px rgba(0,0,0,.15),
+    inset -3px -3px  8px rgba(255,255,255,.80);
+  /* Placa tem espessura — projeção curta e escura */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.22));
   position: relative;
   overflow: hidden;
 }
@@ -279,16 +277,14 @@
    KPI CARD
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-kpi-card {
-  background: var(--sw-card);
+  background: #E2E4E9;
   border-radius: 12px;
-  border-top:    1px solid rgba(0,0,0,.20);
-  border-left:   1px solid rgba(0,0,0,.16);
-  border-bottom: 1px solid rgba(255,255,255,.65);
-  border-right:  1px solid rgba(255,255,255,.55);
+  border: 1px solid rgba(0,0,0,.05);
   padding: 18px 16px 16px;
+  /* Mesmo princípio do painel — corte CNC preciso, não caverna */
   box-shadow:
-    inset 6px  6px 12px rgba(0,0,0,.30),
-    inset -2px -2px  6px rgba(255,255,255,.80);
+    inset  6px  6px 12px rgba(0,0,0,.15),
+    inset -3px -3px  8px rgba(255,255,255,.80);
   position: relative;
   overflow: hidden;
 }
@@ -415,11 +411,16 @@
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-fader-track {
   flex: 1;
-  border-radius: 6px 6px 4px 4px;
-  background: var(--sw-inset);
+  border-radius: 4px;
+  /* Slot físico sobre fundo escuro — transparente para revelar o #1a1d23 */
+  background: rgba(255,255,255,.07);
+  border-top:  1px solid rgba(0,0,0,.40);
+  border-left: 1px solid rgba(0,0,0,.30);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-right:  1px solid rgba(255,255,255,.04);
   box-shadow:
-    inset 2px 2px 5px rgba(0,0,0,.12),
-    inset -1px -1px 3px rgba(255,255,255,.5);
+    inset 2px 2px 6px rgba(0,0,0,.45),
+    inset -1px -1px 2px rgba(255,255,255,.04);
   position: relative;
   overflow: hidden;
 }
@@ -453,25 +454,36 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   LCD SCREEN (inset chart area)
+   LCD SCREEN — display escuro encaixado no chassi
+   Usado no Gráfico de Gigs e Waveform. Fundo escuro = display de mixer DJ.
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-lcd {
-  background: #D8DAE2;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,.08);
+  background: #1a1d23;
+  border-radius: 10px;
+  /* Corte de encaixe: borda escura topo/esq, clara fundo/dir */
+  border-top:    1px solid rgba(0,0,0,.55);
+  border-left:   1px solid rgba(0,0,0,.45);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  border-right:  1px solid rgba(255,255,255,.06);
   box-shadow:
-    inset 3px 3px 10px rgba(0,0,0,.12),
-    inset -2px -2px 6px rgba(255,255,255,.5);
+    inset  6px  6px 12px rgba(0,0,0,.40),
+    inset -2px -2px  6px rgba(255,255,255,.04);
   position: relative;
   overflow: hidden;
 }
 
+/* Reflexo diagonal do vidro protetor — 5% branco */
 .sw-lcd::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 30%;
-  background: linear-gradient(180deg, rgba(255,255,255,.08), transparent);
+  inset: 0;
+  border-radius: 9px;
+  background: linear-gradient(
+    128deg,
+    rgba(255,255,255,.05) 0%,
+    rgba(255,255,255,.02) 35%,
+    transparent 55%
+  );
   pointer-events: none;
   z-index: 1;
 }
