@@ -240,19 +240,34 @@ function StackedBar({ segments }) {
   );
 }
 
-/* ── Knob ── */
-function Knob({ color, rotate = 0, label }) {
+/* ── Knob — potenciômetro 3D ── */
+function Knob({ color, rotate = 0, label, value }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div className={`sw-knob sw-knob-${color}`}>
-        <div
-          className="sw-knob-indicator"
-          style={{ transform: `translateX(-50%) rotate(${rotate}deg)`, transformOrigin: '50% 100%' }}
-        />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+      {/* Aro de base: cavidade embutida no painel onde o knob gira */}
+      <div style={{
+        width: 44, height: 44,
+        borderRadius: '50%',
+        background: 'var(--sw-inset)',
+        border: '1px solid rgba(0,0,0,.20)',
+        boxShadow: 'inset 2px 2px 5px rgba(0,0,0,.25), inset -1px -1px 3px rgba(255,255,255,.50)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div className={`sw-knob sw-knob-${color}`}>
+          <div
+            className="sw-knob-indicator"
+            style={{ transform: `translateX(-50%) rotate(${rotate}deg)`, transformOrigin: '50% 100%' }}
+          />
+        </div>
       </div>
-      <div style={{ fontSize: 8, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--sw-text3)' }}>
+      <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--sw-text3)' }}>
         {label}
       </div>
+      {value != null && (
+        <div style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, color: 'var(--sw-text2)' }}>
+          {value}
+        </div>
+      )}
     </div>
   );
 }
@@ -579,11 +594,11 @@ export default function DashboardPage({ shows }) {
             <StackedBar segments={composicaoSegments} />
 
             {/* Knobs row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-              <Knob color="blue"   rotate={0}   label="DJ" />
-              <Knob color="orange" rotate={40}  label="Daniel" />
-              <Knob color="green"  rotate={-20} label="Yuri" />
-              <Knob color="red"    rotate={60}  label="Custos" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
+              <Knob color="blue"   rotate={totalBruto ? Math.round((lucroLiquido / totalBruto) * 270) - 135 : 0}   label="DJ"     value={moedaCurta(lucroLiquido > 0 ? lucroLiquido : 0)} />
+              <Knob color="orange" rotate={totalBruto ? Math.round((totalDaniel  / totalBruto) * 270) - 135 : 40}  label="Daniel" value={moedaCurta(totalDaniel)} />
+              <Knob color="green"  rotate={totalBruto ? Math.round((totalYuri    / totalBruto) * 270) - 135 : -20} label="Yuri"   value={moedaCurta(totalYuri)} />
+              <Knob color="red"    rotate={totalBruto ? Math.round((totalCustos  / totalBruto) * 270) - 135 : 60}  label="Custos" value={moedaCurta(totalCustos)} />
               <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,.06)', marginTop: -14 }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                 <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 18, fontWeight: 700, letterSpacing: '-.02em', color: 'var(--sw-text1)' }}>

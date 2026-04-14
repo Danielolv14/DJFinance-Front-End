@@ -55,26 +55,27 @@
 
 /* ══════════════════════════════════════════════════════════════════════════
    PANEL = CAVITY ESCULPIDA NO METAL
-   Sem sombra externa. A profundidade vem 100% de inset shadows.
-   Borda é o corte do metal: escura em cima/esquerda, clara embaixo/direita.
+   Regra: ZERO glow externo branco. Profundidade só por inset.
+   Borda assimétrica: topo/esquerda escuro (sombra do corte),
+   fundo/direita claro (luz rebatendo na aresta oposta).
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-panel {
-  background: var(--sw-card);       /* levemente mais claro que o chassis */
+  background: var(--sw-card);
   border-radius: 14px;
-  /* Corte no metal: top/left escuros (sombra), bottom/right claros (luz) */
-  border-top:    1px solid rgba(0,0,0,.18);
-  border-left:   1px solid rgba(0,0,0,.14);
-  border-bottom: 1px solid rgba(255,255,255,.65);
-  border-right:  1px solid rgba(255,255,255,.55);
-  /* Profundidade da cavidade — inset only, ZERO glow externo */
+  border-top:    1px solid rgba(0,0,0,.22);
+  border-left:   1px solid rgba(0,0,0,.18);
+  border-bottom: 1px solid rgba(255,255,255,.70);
+  border-right:  1px solid rgba(255,255,255,.60);
+  /* Cavidade profunda — nenhuma sombra externa, só inset */
   box-shadow:
-    inset 4px  4px 10px rgba(0,0,0,.20),
-    inset -2px -2px  5px rgba(255,255,255,.70);
+    inset 6px  6px 12px rgba(0,0,0,.28),
+    inset -2px -2px  6px rgba(255,255,255,.75);
+  /* Projeção curta e escura — a chapa tem 3mm de espessura, não flutua */
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.30));
   position: relative;
   overflow: hidden;
 }
 
-/* Sem pseudo-elemento de gloss — equipamento industrial não brilha */
 .sw-panel::after { display: none; }
 
 /* Inset / pressed surface (LCD screen effect) */
@@ -88,84 +89,93 @@
 }
 
 /* ══ LCD VALUE DISPLAY — visor digital embutido ══
-   Fundo escuro estilo display industrial. A sombra interna profunda
-   simula o vidro protetor sobre o display.                          */
+   Base cinza-azulado escuro + pixel grid sutil = tela digital real.
+   Sombra interna profunda = vidro de 4mm sobre o display.           */
 .sw-val-lcd {
-  background: #1C2420;         /* escuro esverdeado — display digital        */
-  border-radius: 6px;
-  border-top:  1px solid rgba(0,0,0,.45);
-  border-left: 1px solid rgba(0,0,0,.35);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  border-right:  1px solid rgba(255,255,255,.06);
+  /* Cinza-azulado escuro — estilo display industrial */
+  background:
+    /* pixel grid: linhas 1px a cada 3px, quase invisíveis */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.07) 2px,
+      rgba(0,0,0,.07) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.04) 2px,
+      rgba(0,0,0,.04) 3px
+    ),
+    #1A2230;                      /* fundo base cinza-azulado escuro        */
+  border-radius: 5px;
+  border-top:    1px solid rgba(0,0,0,.55);
+  border-left:   1px solid rgba(0,0,0,.45);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  border-right:  1px solid rgba(255,255,255,.05);
   padding: 7px 10px 5px;
   margin: 6px 0 4px;
   position: relative;
-  /* sombra mais profunda — vidro de 4mm em cima do LCD */
+  /* vidro de 4mm — sombra interna mais densa no topo-esquerda */
   box-shadow:
-    inset 5px  5px 12px rgba(0,0,0,.45),
+    inset 6px  6px 14px rgba(0,0,0,.50),
     inset -2px -2px  5px rgba(255,255,255,.04);
 }
 
-/* reflexo de superfície do vidro — linha fina no topo */
+/* reflexo de superfície do vidro */
 .sw-val-lcd::before {
   content: '';
   position: absolute;
-  top: 2px; left: 5px; right: 5px;
+  top: 2px; left: 4px; right: 4px;
   height: 1px;
-  background: rgba(255,255,255,.12);
-  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14) 40%, transparent);
   pointer-events: none;
 }
 
-/* texto dentro do LCD — cor fósforo */
+/* texto fósforo — emite luz por baixo do vidro */
 .sw-val-lcd .sw-kpi-val {
-  color: #A8F0B8 !important;    /* verde fósforo para todos os visores     */
-  text-shadow: 0 0 8px rgba(100,220,120,.35);
+  color: #B8EACC !important;
+  text-shadow: 0 0 6px rgba(120,220,150,.40), 0 0 1px rgba(120,220,150,.80);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ALLEN SCREWS
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-screw {
-  width: 11px;
-  height: 11px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
-  /* Aço escovado: claro no centro, escuro na borda — sem brilho glossy */
-  background: radial-gradient(circle at 50% 50%,
-    #C8CAD0 0%,
-    #A8AAB2 45%,
-    #888A94 80%,
-    #70727A 100%
+  /* Aço escovado: graduação claro→escuro sem brilho especular */
+  background: radial-gradient(circle at 40% 38%,
+    #C0C2CA 0%,
+    #9EA0A8 50%,
+    #7C7E88 85%,
+    #68696F 100%
   );
-  /* Rim com corte físico: sombra na borda inferior/direita */
   box-shadow:
-    inset 0  1px 1px rgba(255,255,255,.45),
-    inset 0 -1px 1px rgba(0,0,0,.30),
-    1px 1px 2px rgba(0,0,0,.35),
-    0   0   0 1px rgba(0,0,0,.12);
+    inset 0  1px 1px rgba(255,255,255,.40),
+    inset 0 -1px 1px rgba(0,0,0,.25),
+    1px 1px 2px rgba(0,0,0,.40);
   position: absolute;
 }
 
-/* Soquete Allen hexagonal — cavidade central escura */
+/* Soquete Allen hex — detalhe técnico sutil */
 .sw-screw::before {
   content: '';
   position: absolute;
-  inset: 3px;
+  inset: 2.5px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%,
-    #3A3C44 0%,
-    #4E5058 60%,
-    #5A5C64 100%
-  );
+  background: radial-gradient(circle at 40% 35%, #303238 0%, #46484E 100%);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
 }
 
-.sw-screw-tl { top:  9px; left:  9px; }
-.sw-screw-tr { top:  9px; right: 9px; }
-.sw-screw-bl { bottom: 9px; left:  9px; }
-.sw-screw-br { bottom: 9px; right: 9px; }
+.sw-screw-tl { top:  8px; left:  8px; }
+.sw-screw-tr { top:  8px; right: 8px; }
+.sw-screw-bl { bottom: 8px; left:  8px; }
+.sw-screw-br { bottom: 8px; right: 8px; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ENGRAVED LABEL
@@ -248,16 +258,14 @@
 .sw-kpi-card {
   background: var(--sw-card);
   border-radius: 12px;
-  /* Corte no metal — mesma física do painel pai */
-  border-top:    1px solid rgba(0,0,0,.16);
-  border-left:   1px solid rgba(0,0,0,.12);
-  border-bottom: 1px solid rgba(255,255,255,.60);
-  border-right:  1px solid rgba(255,255,255,.50);
+  border-top:    1px solid rgba(0,0,0,.20);
+  border-left:   1px solid rgba(0,0,0,.16);
+  border-bottom: 1px solid rgba(255,255,255,.65);
+  border-right:  1px solid rgba(255,255,255,.55);
   padding: 18px 16px 16px;
-  /* Cavidade um pouco mais rasa que o painel */
   box-shadow:
-    inset 3px  3px  8px rgba(0,0,0,.18),
-    inset -2px -2px  4px rgba(255,255,255,.65);
+    inset 6px  6px 12px rgba(0,0,0,.30),
+    inset -2px -2px  6px rgba(255,255,255,.80);
   position: relative;
   overflow: hidden;
 }
@@ -445,36 +453,78 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   KNOB
+   KNOB — potenciômetro 3D saltando do painel
+   Técnica: conic-gradient para reflexo metálico rotativo +
+            sombra assimétrica externa que o faz "subir" do painel
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-knob {
-  width: 38px; height: 38px;
+  width: 36px; height: 36px;
   border-radius: 50%;
-  box-shadow:
-    -3px -3px 6px rgba(255,255,255,.7),
-     3px  3px 8px rgba(0,0,0,.22),
-    inset 0 1px 2px rgba(255,255,255,.4);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Anel de base embutido (aro aparafusado no painel) */
+  outline: 3px solid rgba(0,0,0,.18);
+  outline-offset: 1px;
+  /* Knob sobe do painel: sombra curta embaixo-direita, highlight cima-esquerda */
+  box-shadow:
+    -2px -2px 4px rgba(255,255,255,.55),  /* highlight de luz em cima */
+     3px  3px 7px rgba(0,0,0,.45),        /* sombra de projeção embaixo */
+    inset 0 1px 2px rgba(255,255,255,.30); /* brilho interno no topo */
 }
 
+/* Reflexo metálico — faixa conic sobre a cor base */
+.sw-knob::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* conic-gradient: reflexo de luz que gira com o knob */
+  background: conic-gradient(
+    from 200deg,
+    rgba(255,255,255,.0)  0deg,
+    rgba(255,255,255,.22) 40deg,
+    rgba(255,255,255,.0)  80deg,
+    rgba(0,0,0,.10)       180deg,
+    rgba(0,0,0,.0)        240deg,
+    rgba(255,255,255,.0)  360deg
+  );
+  pointer-events: none;
+}
+
+/* Marcador de posição — linha fina de controle */
 .sw-knob-indicator {
   position: absolute;
-  top: 4px;
+  top: 5px;
   left: 50%;
-  width: 2px; height: 7px;
+  width: 2px; height: 8px;
   border-radius: 1px;
-  background: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.95);
   transform: translateX(-50%);
-  box-shadow: 0 0 4px rgba(255,255,255,.6);
+  box-shadow: 0 0 3px rgba(255,255,255,.70), 0 1px 0 rgba(0,0,0,.3);
+  z-index: 2;
 }
 
-.sw-knob-blue   { background: radial-gradient(circle at 38% 30%, #5AA8FF, #1A6EFA 50%, #0040B8 100%); }
-.sw-knob-orange { background: radial-gradient(circle at 38% 30%, #FFD070, #FF9F0A 50%, #CC7200 100%); }
-.sw-knob-green  { background: radial-gradient(circle at 38% 30%, #6AE87F, #28CD41 50%, #18882A 100%); }
-.sw-knob-red    { background: radial-gradient(circle at 38% 30%, #FF7B72, #FF3B2F 50%, #C42820 100%); }
+/* ── Cores base de cada knob ── */
+/* Radial gradient: ponto de luz no canto superior-esquerdo,
+   escurece em direção ao centro-baixo — simula relevo esférico */
+.sw-knob-blue {
+  background: radial-gradient(circle at 35% 28%,
+    #7EC4FF 0%, #2A8AFF 30%, #1A6EFA 55%, #0A48C0 80%, #002F88 100%);
+}
+.sw-knob-orange {
+  background: radial-gradient(circle at 35% 28%,
+    #FFE080 0%, #FFBA30 30%, #FF9F0A 55%, #D07000 80%, #8C4400 100%);
+}
+.sw-knob-green {
+  background: radial-gradient(circle at 35% 28%,
+    #80F098 0%, #40D858 30%, #28CD41 55%, #189830 80%, #0A6018 100%);
+}
+.sw-knob-red {
+  background: radial-gradient(circle at 35% 28%,
+    #FF9A94 0%, #FF6058 30%, #FF3B2F 55%, #C81E12 80%, #880808 100%);
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    SECTION LABEL (engraved uppercase)
