@@ -60,22 +60,21 @@
    fundo/direita claro (luz rebatendo na aresta oposta).
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-panel {
-  /* ─── Alumínio anodizado #E2E4E9 — cinza perolado industrial ──────────
-     Noise SVG 3% remove o aspecto de "cor plana de CSS".
-     Sem gradiente — a cor deve ser uniforme; a profundidade vem do inset.
+  /* ─── Placa de alumínio: sem sombra externa, sem glow ────────────────
+     A profundidade vem da borda + quina interna refletindo luz.
+     ZERO filter: drop-shadow. Hardware não flutua.
      ─────────────────────────────────────────────────────────────────── */
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.80' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
     #E2E4E9;
   border-radius: 14px;
-  /* Borda uniforme: define o limite físico do corte CNC */
-  border: 1px solid rgba(0,0,0,.05);
-  /* Spec exata: .15 topo-esq (sombra do corte) + -3px fundo-dir (luz na aresta) */
+  /* Limite físico da placa: 1px escuro define onde o metal termina */
+  border: 1px solid rgba(0,0,0,.20);
   box-shadow:
-    inset  6px  6px 12px rgba(0,0,0,.15),
-    inset -3px -3px  8px rgba(255,255,255,.80);
-  /* Placa tem espessura — projeção curta e escura */
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,.22));
+    /* Quina superior-esquerda reflete luz — aresta chanfrada */
+    inset 1px 1px 0px rgba(255,255,255,1),
+    /* Fundo levemente mais escuro que a superfície — curvatura da placa */
+    inset 0 0 40px rgba(0,0,0,.04);
   position: relative;
   overflow: hidden;
 }
@@ -99,63 +98,42 @@
    3. ::before  — reflexo diagonal de vidro protetor (10% branco)
    4. ::after   — sombra interna de moldura (encaixe no metal)
    ══════════════════════════════════════════════════════════════════════════ */
+/* ══ LCD VALUE DISPLAY — "enfiar o dedo dentro do buraco" ══════════════
+   Técnica: 3 inset shadows empilhadas + fundo #121417.
+   ZERO blur acima de 8px. Nenhuma sombra externa.
+   ══════════════════════════════════════════════════════════════════════ */
 .sw-val-lcd {
-  /* ─── Visor LCD 2mm abaixo da superfície ─────────────────────────────
-     Fundo: cinza-grafite escuro profundo (#1a1d23)
-     Grid: scanlines verticais + horizontais a 3% — tela digital real
-     ─────────────────────────────────────────────────────────────────── */
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent, transparent 2px,
-      rgba(255,255,255,.030) 2px, rgba(255,255,255,.030) 3px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent, transparent 2px,
-      rgba(255,255,255,.018) 2px, rgba(255,255,255,.018) 3px
-    ),
-    #1a1d23;
-  border-radius: 5px;
-  /* Corte do painel: borda 1px define o encaixe físico */
-  border: 1px solid rgba(0,0,0,.05);
-  border-top:   1px solid rgba(0,0,0,.55);
-  border-left:  1px solid rgba(0,0,0,.45);
+  /* Fundo #121417 — mais escuro que o espaço entre as peças */
+  background: #121417;
+  border-radius: 4px;
+  /* Borda que define a moldura física do corte */
+  border: 1px solid rgba(0,0,0,.55);
   padding: 7px 10px 5px;
   margin: 6px 0 4px;
   position: relative;
   overflow: hidden;
-  /* Extrusão negativa — spec exata: 5px topo-esq + 3px fundo-dir */
+  /* ── Três insets empilhados — profundidade de cavidade física ──────
+     1. sombra de profundidade: topo-esq escuro, blur 8px
+     2. reflexo da aresta oposta: fundo-dir branco, blur 4px
+     3. contorno do corte: 1px sólido escuro (spread 0, blur 0)      */
   box-shadow:
-    inset  5px  5px 10px rgba(0,0,0,.25),
-    inset -3px -3px  6px rgba(255,255,255,.90);
+    inset  4px  4px  8px rgba(0,0,0,.30),
+    inset -2px -2px  4px rgba(255,255,255,.80),
+    inset  1px  1px  0px rgba(0,0,0,.50);
 }
 
-/* Reflexo de vidro protetor — gradiente diagonal 5% branco */
-.sw-val-lcd::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 4px;
-  background: linear-gradient(
-    128deg,
-    rgba(255,255,255,.05) 0%,
-    rgba(255,255,255,.03) 40%,
-    rgba(255,255,255,.00) 60%
-  );
-  pointer-events: none;
-  z-index: 1;
-}
+/* Sem reflexo de vidro — buraco não tem vidro na frente */
+.sw-val-lcd::before { display: none; }
 
-/* Emissão do display — text-shadow simula painel digital aceso */
+/* Número emite luz de dentro da cavidade — LED neon verde */
 .sw-val-lcd .sw-kpi-val {
   position: relative;
   z-index: 2;
-  color: #C0EDD0 !important;
-  /* 0 0 8px = halo de emissão, 0 0 1px = borda nítida do fósforo */
+  color: #39FF85 !important;          /* verde neon saturado               */
   text-shadow:
-    0 0 8px rgba(148, 220, 172, .40),
-    0 0 1px rgba(148, 220, 172, .80);
+    0 0 4px rgba(57,255,133,.90),      /* halo imediato, blur baixo         */
+    0 0 8px rgba(57,255,133,.50),      /* difusão média — emissão do LED    */
+    0 0 1px rgba(255,255,255,.80);     /* borda branca nítida do filamento  */
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
