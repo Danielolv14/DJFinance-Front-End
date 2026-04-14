@@ -8,12 +8,12 @@
 
 /* ── Design Tokens ── */
 :root {
-  /* Surfaces */
-  --sw-bg:       #E2E4E9;
-  --sw-card:     #EDEEF2;
-  --sw-card-hi:  #F5F6FA;
-  --sw-inset:    #D8DAE0;
-  --sw-border:   #D0D2DA;
+  /* Surfaces — pearl industrial aluminum, NOT white */
+  --sw-bg:       #D8DAE0;   /* chassis floor — slightly darker   */
+  --sw-card:     #E2E4E9;   /* face plate — pearl gray           */
+  --sw-card-hi:  #EDEEF2;   /* raised micro-surface              */
+  --sw-inset:    #CFD1D9;   /* recessed pocket                   */
+  --sw-border:   #C8CAD2;   /* engraved line
 
   /* Text */
   --sw-text1:    #1A1B1F;
@@ -51,66 +51,116 @@
    NEUMORPHIC PANEL
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-panel {
-  background: var(--sw-card);
-  border-radius: 24px;
-  border: 1px solid rgba(255,255,255,.7);
+  background: var(--sw-card);           /* #E2E4E9 — pearl aluminum, not white */
+  border-radius: 20px;
+  /* Quina chanfrada: borda branca brilhante simula biseau da aresta */
+  border: 1px solid rgba(255,255,255,.92);
   box-shadow:
-    -6px -6px 14px var(--sw-sh-light),
-     6px  6px 14px var(--sw-sh-dark),
-    inset 0 1px 0 rgba(255,255,255,.6);
+    /* sombra externa fina e escura — cria ilusão de espessura */
+    0 2px 6px rgba(0,0,0,.22),
+    0 1px 2px rgba(0,0,0,.14),
+    /* neumorphism clássico */
+    -6px -6px 16px rgba(255,255,255,.85),
+     6px  6px 16px rgba(0,0,0,.13),
+    /* highlight interno no topo */
+    inset 0 1px 0 rgba(255,255,255,.65);
   position: relative;
   overflow: hidden;
 }
 
-/* Gloss top-left sheen */
+/* Gloss top-left sheen — luz rasante sobre alumínio polido */
 .sw-panel::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 24px;
-  background: linear-gradient(160deg, rgba(255,255,255,.18) 0%, transparent 50%);
+  border-radius: 20px;
+  background: linear-gradient(150deg,
+    rgba(255,255,255,.22) 0%,
+    rgba(255,255,255,.06) 30%,
+    transparent 60%
+  );
   pointer-events: none;
+  z-index: 0;
 }
 
 /* Inset / pressed surface (LCD screen effect) */
 .sw-inset {
   background: var(--sw-inset);
   border-radius: 14px;
-  border: 1px solid rgba(0,0,0,.06);
+  border: 1px solid rgba(0,0,0,.07);
   box-shadow:
     inset 3px 3px 8px rgba(0,0,0,.12),
     inset -2px -2px 6px rgba(255,255,255,.7);
+}
+
+/* ══ LCD VALUE DISPLAY — "buraco cortado no metal" ══
+   Use em torno do sw-kpi-val para criar a ilusão de visor
+   embutido por baixo da chapa de alumínio.                */
+.sw-val-lcd {
+  background: #CBCDD5;         /* fundo do LCD: mais escuro que o card      */
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,.12);
+  padding: 7px 10px 5px;
+  margin: 6px 0 4px;
+  position: relative;
+  /* sombras internas que criam a profundidade de 2mm */
+  box-shadow:
+    inset 4px  4px  8px rgba(0,0,0,.15),
+    inset -2px -2px  4px rgba(255,255,255,.80);
+}
+
+/* micro-reflexo no canto superior esquerdo do visor */
+.sw-val-lcd::before {
+  content: '';
+  position: absolute;
+  top: 2px; left: 4px;
+  width: 40%; height: 1px;
+  background: rgba(255,255,255,.5);
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ALLEN SCREWS
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-screw {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: radial-gradient(circle at 38% 32%, #D0D2D8 0%, #B0B2BC 45%, #98999F 100%);
+  /*  Rim externo: aresta chanfrada — escuro→claro do centro pra borda  */
+  background: radial-gradient(circle at 40% 35%,
+    #A2A4AE 0%,
+    #BBBDC7 40%,
+    #D2D4DC 75%,
+    #E0E2E8 100%
+  );
   box-shadow:
-    inset 0 1px 2px rgba(255,255,255,.6),
-    inset 0 -1px 2px rgba(0,0,0,.15),
-    0 1px 3px rgba(0,0,0,.2);
+    /* rim com sombra lateral — parafuso tem espessura */
+    1px 1px 2px rgba(0,0,0,.3),
+    -1px -1px 1px rgba(255,255,255,.6),
+    0 1px 3px rgba(0,0,0,.25);
   position: absolute;
 }
 
+/* Soquete hexagonal — a cavidade do Allen, mais escura */
 .sw-screw::before {
   content: '';
   position: absolute;
   inset: 2.5px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #8A8C96 0%, #6C6E78 100%);
+  background: radial-gradient(circle at 38% 32%,
+    #5A5C66 0%,
+    #6E707A 50%,
+    #7A7C86 100%
+  );
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
-.sw-screw-tl { top: 11px;    left: 11px;  }
-.sw-screw-tr { top: 11px;    right: 11px; }
-.sw-screw-bl { bottom: 11px; left: 11px;  }
-.sw-screw-br { bottom: 11px; right: 11px; }
+.sw-screw-tl { top: 10px;    left: 10px;  }
+.sw-screw-tr { top: 10px;    right: 10px; }
+.sw-screw-bl { bottom: 10px; left: 10px;  }
+.sw-screw-br { bottom: 10px; right: 10px; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ENGRAVED LABEL
@@ -138,65 +188,70 @@
   gap: 2px;
 }
 
+/* ── LED APAGADO: cavidade embutida na chapa, sombra interna forte ── */
 .sw-vu-seg {
   height: 5px;
-  border-radius: 2px;
-  /* LED apagado: placa escura com sombra interna preta */
-  background: #1E2124;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,.7), inset 0 0 1px rgba(0,0,0,.9);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
-  transition: background .2s, box-shadow .2s;
+  border-radius: 1.5px;
+  /*  Cinza médio — a "tampa" opaca do LED desligado  */
+  background: #B8BAC4;
+  box-shadow:
+    inset 0  1px 2px rgba(0,0,0,.30),   /* borda superior escura  */
+    inset 0 -1px 1px rgba(255,255,255,.40); /* borda inferior clara */
+  transition: background .12s, box-shadow .12s;
 }
 
-/* LED aceso: cor vibrante + halo de luz 8px */
+/* ── LED ACESO: cor sólida + glow focado e contido ── */
 .sw-vu-seg.on-green {
-  background: radial-gradient(ellipse at 50% 30%, #5AFF70, var(--sw-green));
+  background: #28CD41;
   box-shadow:
-    0 0 3px 1px rgba(40,205,65,1),
-    0 0 8px   rgba(40,205,65,.8),
-    0 0 16px  rgba(40,205,65,.35);
+    0 0 0 1px rgba(40,205,65,.25),          /* anel de contenção */
+    0 0 5px   rgba(40,205,65,.55),           /* glow focal, raio curto */
+    inset 0 1px 1px rgba(255,255,255,.35);  /* brilho no topo do LED */
 }
 .sw-vu-seg.on-yellow {
-  background: radial-gradient(ellipse at 50% 30%, #FFE84A, var(--sw-yellow));
+  background: #F0C600;
   box-shadow:
-    0 0 3px 1px rgba(255,214,10,1),
-    0 0 8px   rgba(255,214,10,.8),
-    0 0 16px  rgba(255,214,10,.35);
+    0 0 0 1px rgba(240,198,0,.25),
+    0 0 5px   rgba(240,198,0,.55),
+    inset 0 1px 1px rgba(255,255,255,.35);
 }
 .sw-vu-seg.on-orange {
-  background: radial-gradient(ellipse at 50% 30%, #FF8C3A, var(--sw-orange));
+  background: #FF6200;
   box-shadow:
-    0 0 3px 1px rgba(255,98,0,1),
-    0 0 8px   rgba(255,98,0,.8),
-    0 0 16px  rgba(255,98,0,.35);
+    0 0 0 1px rgba(255,98,0,.25),
+    0 0 5px   rgba(255,98,0,.55),
+    inset 0 1px 1px rgba(255,255,255,.30);
 }
 .sw-vu-seg.on-red {
-  background: radial-gradient(ellipse at 50% 30%, #FF6B63, var(--sw-red));
+  background: #FF3B2F;
   box-shadow:
-    0 0 3px 1px rgba(255,59,47,1),
-    0 0 8px   rgba(255,59,47,.8),
-    0 0 16px  rgba(255,59,47,.35);
+    0 0 0 1px rgba(255,59,47,.25),
+    0 0 5px   rgba(255,59,47,.55),
+    inset 0 1px 1px rgba(255,255,255,.30);
 }
 .sw-vu-seg.on-purple {
-  background: radial-gradient(ellipse at 50% 30%, #A48BFF, var(--sw-purple));
+  background: #7B5CF5;
   box-shadow:
-    0 0 3px 1px rgba(123,92,245,1),
-    0 0 8px   rgba(123,92,245,.8),
-    0 0 16px  rgba(123,92,245,.35);
+    0 0 0 1px rgba(123,92,245,.25),
+    0 0 5px   rgba(123,92,245,.55),
+    inset 0 1px 1px rgba(255,255,255,.30);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    KPI CARD
    ══════════════════════════════════════════════════════════════════════════ */
 .sw-kpi-card {
-  background: var(--sw-card);
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.7);
-  padding: 18px 18px 16px;
+  background: var(--sw-card);         /* #E2E4E9 pearl gray */
+  border-radius: 16px;
+  /* quina chanfrada: borda branca brilhante + sombra externa fina */
+  border: 1px solid rgba(255,255,255,.90);
+  padding: 18px 16px 16px;
   box-shadow:
-    -5px -5px 12px var(--sw-sh-light),
-     5px  5px 12px var(--sw-sh-dark),
-    inset 0 1px 0 rgba(255,255,255,.5);
+    0 2px 5px rgba(0,0,0,.20),        /* espessura da chapa */
+    0 1px 2px rgba(0,0,0,.12),
+    -5px -5px 12px rgba(255,255,255,.85),
+     5px  5px 12px rgba(0,0,0,.12),
+    inset 0 1px 0 rgba(255,255,255,.60);
   position: relative;
   overflow: hidden;
 }
