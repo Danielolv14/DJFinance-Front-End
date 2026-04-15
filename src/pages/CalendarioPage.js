@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BloqueioAgenda from '../components/BloqueioAgenda';
+import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── constants ─── */
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -32,6 +33,7 @@ const surface = {
 
 /* ═══════════════ PAGE ═══════════════ */
 export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtualizado }) {
+  const isMobile = useIsMobile();
   const hoje = new Date();
   const [mes,  setMes]  = useState(hoje.getMonth());
   const [ano,  setAno]  = useState(hoje.getFullYear());
@@ -89,21 +91,21 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
     .slice(0, 4);
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
+    <div style={{ padding: isMobile ? '0' : '24px 28px', maxWidth: 1400, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
 
       {/* ── Page header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           <LedDot color="#3dd457" />
           <div>
             <div style={{ fontSize: 11, color: 'rgba(61,212,87,0.7)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>DECK 2 · CALENDÁRIO</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
+            <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
               {MESES_FULL[mes]} {ano}
             </div>
           </div>
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           {/* Block button */}
           <button
             onClick={() => setMostrarBloqueio(v => !v)}
@@ -217,7 +219,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
       </AnimatePresence>
 
       {/* ── Calendar + Side panel ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: 16 }}>
 
         {/* Calendar */}
         <div style={{ ...surface, padding: 16 }}>
@@ -258,9 +260,9 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                   onClick={() => temShow ? setShowSel(showsDia[0]) : setShowSel(null)}
                   style={{
                     aspectRatio: '1',
-                    minHeight: 56,
+                    minHeight: isMobile ? 40 : 56,
                     display: 'flex', flexDirection: 'column',
-                    padding: '6px 5px',
+                    padding: isMobile ? '3px' : '6px 5px',
                     borderRadius: 4,
                     cursor: temShow ? 'pointer' : 'default',
                     position: 'relative',
@@ -288,7 +290,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                   {/* Day number */}
                   <div style={{
                     fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 12, fontWeight: hoje_ ? 700 : 500,
+                    fontSize: isMobile ? 9 : 12, fontWeight: hoje_ ? 700 : 500,
                     color: hoje_
                       ? '#1a6efa'
                       : bloqueado && !temShow
@@ -308,27 +310,39 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                     }}>⊗</div>
                   )}
 
-                  {/* Show pills */}
-                  {showsDia.slice(0, 2).map((s, j) => {
-                    const cor = STATUS_COLOR[s.status] || '#9a7ef8';
-                    return (
-                      <div key={j} style={{
-                        fontSize: 8, fontWeight: 700, letterSpacing: '0.04em',
-                        color: cor, background: cor + '18',
-                        borderLeft: `2px solid ${cor}`,
-                        borderRadius: 2, padding: '1px 4px',
-                        marginBottom: 1,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        boxShadow: `0 0 4px ${cor}20`,
-                      }}>
-                        {s.evento?.slice(0, 10) || '—'}
-                      </div>
-                    );
-                  })}
-                  {showsDia.length > 2 && (
-                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>
-                      +{showsDia.length - 2}
-                    </div>
+                  {/* Show pills — hidden on mobile, replaced by colored dot */}
+                  {isMobile ? (
+                    temShow && (
+                      <div style={{
+                        width: 5, height: 5, borderRadius: '50%', margin: '2px auto 0',
+                        background: STATUS_COLOR[showsDia[0]?.status] || '#9a7ef8',
+                        boxShadow: `0 0 4px ${STATUS_COLOR[showsDia[0]?.status] || '#9a7ef8'}`,
+                      }} />
+                    )
+                  ) : (
+                    <>
+                      {showsDia.slice(0, 2).map((s, j) => {
+                        const cor = STATUS_COLOR[s.status] || '#9a7ef8';
+                        return (
+                          <div key={j} style={{
+                            fontSize: 8, fontWeight: 700, letterSpacing: '0.04em',
+                            color: cor, background: cor + '18',
+                            borderLeft: `2px solid ${cor}`,
+                            borderRadius: 2, padding: '1px 4px',
+                            marginBottom: 1,
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                            boxShadow: `0 0 4px ${cor}20`,
+                          }}>
+                            {s.evento?.slice(0, 10) || '—'}
+                          </div>
+                        );
+                      })}
+                      {showsDia.length > 2 && (
+                        <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>
+                          +{showsDia.length - 2}
+                        </div>
+                      )}
+                    </>
                   )}
                 </motion.div>
               );

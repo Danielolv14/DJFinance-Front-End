@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFechamento } from '../services/api';
 import { gerarPDFFechamento } from '../services/pdfService';
+import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── constants ─── */
 const MESES = [
@@ -83,6 +84,7 @@ function ResultCard({ label, val, color, detail, large }) {
 const STATUS_COLOR = { CONFIRMADO: '#3dd457', PENDENTE: '#ffd60a', CANCELADO: '#ff453a' };
 
 export default function FechamentoMensal() {
+  const isMobile = useIsMobile();
   const hoje = new Date();
   const [mes,        setMes]        = useState(hoje.getMonth()+1);
   const [ano,        setAno]        = useState(hoje.getFullYear());
@@ -112,44 +114,44 @@ export default function FechamentoMensal() {
   const nomeMes = MESES.find(m => m.value === Number(mes))?.label;
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1100, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
+    <div style={{ padding: isMobile ? '0' : '24px 28px', maxWidth: 1100, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
 
       {/* ── Page header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: ACCENT, boxShadow: `0 0 8px ${ACCENT}` }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: ACCENT, boxShadow: `0 0 8px ${ACCENT}`, flexShrink: 0 }} />
         <div>
           <div style={{ fontSize: 11, color: `${ACCENT}99`, letterSpacing: '0.2em', textTransform: 'uppercase' }}>DECK 6 · FECHAMENTO</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>Fechamento Mensal</div>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>Fechamento Mensal</div>
         </div>
       </div>
 
       {/* ── Controls ── */}
-      <div style={{ ...surface, padding: '20px 24px', borderTop: `2px solid ${ACCENT}`, marginBottom: 20 }}>
+      <div style={{ ...surface, padding: isMobile ? '16px' : '20px 24px', borderTop: `2px solid ${ACCENT}`, marginBottom: 20 }}>
         <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.2em', marginBottom: 14 }}>PARÂMETROS DO RELATÓRIO</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: isMobile ? '1 1 100%' : 'none' }}>
             <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>MÊS</label>
             <select
               value={mes} onChange={e => setMes(e.target.value)}
-              style={{ ...inputStyle, minWidth: 150 }}
+              style={{ ...inputStyle, width: '100%', minWidth: isMobile ? 'unset' : 150 }}
             >
               {MESES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: isMobile ? '1 1 calc(50% - 6px)' : 'none' }}>
             <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>ANO</label>
             <input
               type="number" value={ano} onChange={e => setAno(e.target.value)}
               min="2020" max="2099"
-              style={{ ...inputStyle, width: 90 }}
+              style={{ ...inputStyle, width: '100%' }}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: isMobile ? '1 1 calc(50% - 6px)' : 'none' }}>
             <label style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>IMPOSTO NF (%)</label>
             <input
               type="number" value={imposto} onChange={e => setImposto(e.target.value)}
               placeholder="Ex: 6" min="0" max="100" step="0.1"
-              style={{ ...inputStyle, width: 110 }}
+              style={{ ...inputStyle, width: '100%' }}
             />
           </div>
 
