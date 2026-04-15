@@ -10,12 +10,12 @@ import { getShows, getBloqueios } from './services/api';
 import './App.css';
 
 const ABAS = [
-  { id:'dashboard',   label:'Dashboard',   icon:'📈' },
-  { id:'calendario',  label:'Calendário',  icon:'📅' },
-  { id:'visao',       label:'Shows',       icon:'📊' },
-  { id:'crm',         label:'CRM',         icon:'👥' },
-  { id:'cadastro',    label:'+ Cadastrar', icon:'🎵' },
-  { id:'fechamento',  label:'Fechamento',  icon:'💰' },
+  { id:'dashboard',  label:'Dashboard',  color:'#4d8fff', shortcut:'F1' },
+  { id:'calendario', label:'Calendário', color:'#3dd457', shortcut:'F2' },
+  { id:'visao',      label:'Shows',      color:'#9a7ef8', shortcut:'F3' },
+  { id:'crm',        label:'CRM',        color:'#ff8040', shortcut:'F4' },
+  { id:'cadastro',   label:'Cadastrar',  color:'#ffd60a', shortcut:'F5' },
+  { id:'fechamento', label:'Fechamento', color:'#ff6058', shortcut:'F6' },
 ];
 
 export default function App() {
@@ -54,31 +54,47 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-inner">
+
+          {/* ── Logo XDJ ── */}
           <div className="logo">
-            <div className="logo-icon-wrap">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="7" stroke="white" strokeWidth="1.4"/>
-                <circle cx="10" cy="10" r="3" fill="white"/>
-                <circle cx="10" cy="10" r="1.2" fill="#0E0F12"/>
-                <line x1="10" y1="3" x2="10" y2="1.2" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                <line x1="10" y1="18.8" x2="10" y2="17" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                <line x1="1.2" y1="10" x2="3" y2="10" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
-                <line x1="17" y1="10" x2="18.8" y2="10" stroke="white" strokeWidth="1.4" strokeLinecap="round"/>
+            <div className="logo-vinyl">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="14" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+                <circle cx="16" cy="16" r="10" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+                <circle cx="16" cy="16" r="6"  stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+                <circle cx="16" cy="16" r="3"  fill="#1A6EFA" opacity="0.9"/>
+                <circle cx="16" cy="16" r="1.4" fill="#0a0b0e"/>
+                {/* Tick marks */}
+                {[0,45,90,135,180,225,270,315].map((deg,i) => (
+                  <line key={i}
+                    x1={16 + 13*Math.cos(deg*Math.PI/180)}
+                    y1={16 + 13*Math.sin(deg*Math.PI/180)}
+                    x2={16 + 11*Math.cos(deg*Math.PI/180)}
+                    y2={16 + 11*Math.sin(deg*Math.PI/180)}
+                    stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeLinecap="round"
+                  />
+                ))}
               </svg>
             </div>
-            <div>
-              <div className="logo-text">DJFinance</div>
-              <div className="logo-sub">Studio Edition</div>
+            <div className="logo-text-block">
+              <div className="logo-brand">PIONEER DJ</div>
+              <div className="logo-product">XDJ <span className="logo-accent">FINANCE</span></div>
             </div>
           </div>
 
+          {/* ── Hardware nav buttons ── */}
           <nav className="nav">
             {ABAS.map(a => (
-              <button key={a.id}
+              <button
+                key={a.id}
                 className={'nav-btn' + (aba === a.id ? ' active' : '')}
-                onClick={() => { setAba(a.id); if (a.id !== 'cadastro') setShowParaEditar(null); }}>
-                <span className="nav-icon">{a.icon}</span>
-                {a.label}
+                style={{ '--btn-color': a.color }}
+                onClick={() => { setAba(a.id); if (a.id !== 'cadastro') setShowParaEditar(null); }}
+              >
+                {/* LED indicator strip */}
+                <span className="nav-led" />
+                <span className="nav-label">{a.label}</span>
+                <span className="nav-shortcut">{a.shortcut}</span>
                 {a.id === 'visao' && shows.length > 0 && (
                   <span className="nav-badge">{shows.length}</span>
                 )}
@@ -86,10 +102,24 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="header-status">
-            <div className="header-led" />
-            ONLINE
+          {/* ── Status cluster ── */}
+          <div className="header-status-cluster">
+            <div className="status-item status-online">
+              <span className="status-led status-led--green" />
+              <span>ONLINE</span>
+            </div>
+            <div className="status-item">
+              <span className="status-led status-led--blue" />
+              <span>SYNC</span>
+            </div>
+            {loading && (
+              <div className="status-item">
+                <span className="status-led status-led--orange status-led--blink" />
+                <span>LOAD</span>
+              </div>
+            )}
           </div>
+
         </div>
       </header>
 
@@ -102,15 +132,17 @@ export default function App() {
         )}
         {aba === 'crm'        && <CRMPage shows={shows} />}
         {aba === 'cadastro'   && (
-          <div className="page">
-            <ImportarCSV onImportado={carregarShows} />
+          <>
+            <div style={{ padding: '24px 28px 0', maxWidth: 860, margin: '0 auto' }}>
+              <ImportarCSV onImportado={carregarShows} />
+            </div>
             <CadastroPage
               onShowSalvo={handleShowSalvo}
               showParaEditar={showParaEditar}
               onCancelarEdicao={() => setShowParaEditar(null)}
               bloqueios={bloqueios}
             />
-          </div>
+          </>
         )}
         {aba === 'fechamento' && <FechamentoMensal />}
       </main>
