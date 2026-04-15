@@ -120,3 +120,20 @@ body {
   100% { transform: scale(2.2); opacity: 0; }
 }
 .led-ping { animation: led-ping 1.8s ease-out infinite; }
+
+@keyframes ledPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor, 0 0 12px currentColor; }
+  50%       { opacity: 0.5; box-shadow: 0 0 3px currentColor; }
+}
+
+/* ── Input dark theme overrides (prevent browser default light inputs) ── */
+input[type="date"], input[type="time"] {
+  color-scheme: dark;
+}
+input::placeholder, textarea::placeholder {
+  color: rgba(255,255,255,0.18);
+}
+select option {
+  background: #13141a;
+  color: rgba(255,255,255,0.85);
+}

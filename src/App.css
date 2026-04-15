@@ -98,237 +98,283 @@ body::after {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   HEADER — Dark CNC-machined chassis bar
+   HEADER — Pioneer XDJ-RX3 hardware top panel
    ══════════════════════════════════════════════════════════════════════════ */
 .header {
-  background: linear-gradient(180deg,
-    #232428 0%,
-    #1A1B1F 40%,
-    #16171B 100%
-  );
-  border-bottom: 1px solid rgba(0,0,0,.7);
-  /* Top-edge highlight: machined bevel */
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.06) inset,
-    0 -1px 0 rgba(255,255,255,.03) inset,
-    0 4px 20px rgba(0,0,0,.5),
-    0 1px 0 rgba(255,255,255,.04);
   position: sticky;
   top: 0;
   z-index: 100;
-  /* Subtle horizontal machining lines */
+  background:
+    linear-gradient(180deg, #1e1f24 0%, #17181c 60%, #121316 100%);
+  border-bottom: 2px solid #0a0b0d;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.6),
+    0 4px 24px rgba(0,0,0,.7),
+    0 1px 0 rgba(255,255,255,.03);
+  /* machining lines */
   background-image:
-    linear-gradient(180deg, #232428 0%, #1A1B1F 40%, #16171B 100%),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 3px,
-      rgba(255,255,255,.004) 3px,
-      rgba(255,255,255,.004) 4px
-    );
+    linear-gradient(180deg, #1e1f24 0%, #17181c 60%, #121316 100%),
+    repeating-linear-gradient(90deg,
+      transparent, transparent 3px,
+      rgba(255,255,255,.003) 3px, rgba(255,255,255,.003) 4px);
 }
 
 .header-inner {
-  max-width: 1020px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 24px;
-  height: 64px;
+  padding: 0 20px;
+  height: 56px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 20px;
 }
 
-/* ── Logo ── */
+/* ── Logo XDJ ── */
 .logo {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.logo-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  /* CNC-engraved inset with vinyl disc inside */
-  background: radial-gradient(circle at 40% 35%, #2E3036, #0C0D10);
+.logo-vinyl {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #2a2c34, #0c0d10);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    inset 0 2px 4px rgba(0,0,0,.6),
-    inset 0 -1px 2px rgba(255,255,255,.05),
-    0 1px 0 rgba(255,255,255,.08),
-    0 2px 8px rgba(0,0,0,.4);
+    inset 0 2px 6px rgba(0,0,0,.7),
+    0 0 0 1px rgba(255,255,255,.06),
+    0 0 12px rgba(26,110,250,.12);
   flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,.07);
 }
 
-.logo-text {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -.02em;
-  color: var(--chassis-text);
+.logo-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
-.logo-sub {
-  font-size: 9px;
-  color: var(--chassis-text-muted);
-  letter-spacing: .14em;
+.logo-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
   font-weight: 600;
+  letter-spacing: .3em;
   text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+}
+
+.logo-product {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: rgba(255,255,255,.88);
+  line-height: 1;
+}
+
+.logo-accent {
+  color: #4d8fff;
+  text-shadow: 0 0 14px rgba(77,143,255,.5);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   NAV — Physical rubber buttons on dark chassis
+   NAV — XDJ-RX3 physical hardware buttons
    ══════════════════════════════════════════════════════════════════════════ */
 .nav {
   display: flex;
   align-items: center;
-  gap: 4px;
-  /* Recessed housing */
-  background: linear-gradient(180deg, #0E0F12, #131417);
-  border: 1px solid rgba(0,0,0,.6);
-  border-top-color: rgba(255,255,255,.05);
-  border-radius: 12px;
-  padding: 4px;
+  gap: 3px;
+  flex: 1;
+  /* Recessed tray */
+  background: linear-gradient(180deg, #0c0d0f, #101114);
+  border: 1px solid rgba(0,0,0,.7);
+  border-top-color: rgba(255,255,255,.04);
+  border-radius: 6px;
+  padding: 5px;
   box-shadow:
-    inset 0 2px 5px rgba(0,0,0,.5),
-    inset 0 -1px 2px rgba(255,255,255,.03),
-    0 1px 0 rgba(255,255,255,.06);
+    inset 0 3px 8px rgba(0,0,0,.6),
+    inset 0 -1px 2px rgba(255,255,255,.02),
+    0 1px 0 rgba(255,255,255,.04);
 }
 
+/* ── XDJ-RX3 style hardware button ── */
 .nav-btn {
-  background: linear-gradient(180deg, #2A2B30 0%, #222327 100%);
-  border: 1px solid rgba(0,0,0,.5);
-  border-top-color: rgba(255,255,255,.09);
-  color: var(--chassis-text-muted);
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 7px 13px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all .15s ease;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  letter-spacing: .01em;
-  white-space: nowrap;
   position: relative;
-  /* Physical raised button: elevated shadow */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 7px 14px 6px;
+  min-width: 76px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .12s ease;
+  white-space: nowrap;
+  /* Dark matte rubber surface */
+  background: linear-gradient(180deg, #272830 0%, #1e1f26 100%);
+  border: 1px solid rgba(0,0,0,.55);
+  border-top-color: rgba(255,255,255,.07);
   box-shadow:
-    0 2px 4px rgba(0,0,0,.4),
-    0 1px 0 rgba(255,255,255,.05) inset;
+    0 2px 6px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 -1px 0 rgba(0,0,0,.3);
 }
 
-.nav-btn:hover {
-  background: linear-gradient(180deg, #32333A 0%, #28292F 100%);
-  color: var(--chassis-text);
-  box-shadow:
-    0 2px 6px rgba(0,0,0,.45),
-    0 1px 0 rgba(255,255,255,.07) inset;
+/* LED indicator strip at top */
+.nav-led {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: rgba(255,255,255,.05);
+  transition: all .15s ease;
 }
 
-/* Active = physically pressed + inner glow of accent color */
-.nav-btn.active {
-  background: linear-gradient(180deg, #1E1F24 0%, #18191D 100%);
-  color: var(--accent);
-  border-color: rgba(26,110,250,.3);
-  border-top-color: rgba(26,110,250,.2);
-  /* Pressed state: inset shadow */
-  box-shadow:
-    inset 0 2px 4px rgba(0,0,0,.5),
-    inset 0 1px 8px rgba(26,110,250,.18),
-    0 0 10px rgba(26,110,250,.12),
-    0 0 1px rgba(26,110,250,.4);
-}
-
-/* Color each tab's inner glow to match its icon */
-.nav-btn.active:nth-child(1) { /* Dashboard */
-  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), inset 0 1px 8px rgba(26,110,250,.2), 0 0 10px rgba(26,110,250,.15); color: #5DA0FF;
-  border-color: rgba(26,110,250,.3);
-}
-.nav-btn.active:nth-child(2) { /* Calendário */
-  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), inset 0 1px 8px rgba(40,205,65,.15), 0 0 10px rgba(40,205,65,.12); color: #3DD457;
-  border-color: rgba(40,205,65,.25);
-}
-.nav-btn.active:nth-child(3) { /* Shows */
-  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), inset 0 1px 8px rgba(123,92,245,.15), 0 0 10px rgba(123,92,245,.12); color: #9A7EF8;
-  border-color: rgba(123,92,245,.25);
-}
-.nav-btn.active:nth-child(4) { /* CRM */
-  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), inset 0 1px 8px rgba(255,98,0,.15), 0 0 10px rgba(255,98,0,.12); color: #FF8040;
-  border-color: rgba(255,98,0,.25);
-}
-.nav-btn.active:nth-child(5) { /* Cadastrar */
-  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), inset 0 1px 8px rgba(255,214,10,.12), 0 0 10px rgba(255,214,10,.1); color: #FFD60A;
-  border-color: rgba(255,214,10,.2);
-}
-.nav-btn.active:nth-child(6) { /* Fechamento */
-  box-shadow: inset 0 2px 4px rgba(0,0,0,.5), inset 0 1px 8px rgba(255,59,47,.15), 0 0 10px rgba(255,59,47,.12); color: #FF6058;
-  border-color: rgba(255,59,47,.25);
-}
-
-.nav-icon { font-size: 13px; }
-
-.nav-badge {
-  font-size: 9px;
-  font-weight: 800;
+.nav-label {
   font-family: 'JetBrains Mono', monospace;
-  background: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.35);
+  transition: color .12s ease;
+  line-height: 1;
+}
+
+.nav-shortcut {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.15);
+  line-height: 1;
+  transition: color .12s ease;
+}
+
+.nav-btn:hover .nav-label  { color: rgba(255,255,255,.65); }
+.nav-btn:hover .nav-led    { background: rgba(255,255,255,.15); }
+.nav-btn:hover {
+  background: linear-gradient(180deg, #2e2f3a 0%, #232430 100%);
+  box-shadow: 0 3px 8px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Active = pressed + LED lit in button color */
+.nav-btn.active {
+  background: linear-gradient(180deg, #1a1b22 0%, #14151c 100%);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,.6),
+    inset 0 0 12px rgba(0,0,0,.2),
+    0 0 0 1px rgba(0,0,0,.3);
+}
+
+.nav-btn.active .nav-led {
+  background: var(--btn-color, #4d8fff);
+  box-shadow:
+    0 0 6px var(--btn-color, #4d8fff),
+    0 0 14px var(--btn-color, #4d8fff);
+  height: 2px;
+  opacity: 1;
+}
+
+.nav-btn.active .nav-label {
+  color: var(--btn-color, #4d8fff);
+  text-shadow: 0 0 10px var(--btn-color, #4d8fff);
+}
+
+.nav-btn.active .nav-shortcut {
+  color: var(--btn-color, #4d8fff);
+  opacity: .5;
+}
+
+/* Badge */
+.nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  background: #4d8fff;
   color: white;
-  padding: 1px 5px;
-  border-radius: 20px;
-  min-width: 18px;
+  padding: 0 4px;
+  border-radius: 3px;
+  min-width: 16px;
   text-align: center;
-  box-shadow: 0 0 6px rgba(26,110,250,.5);
+  box-shadow: 0 0 6px rgba(77,143,255,.6);
+  line-height: 14px;
+  height: 14px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   ONLINE LED — light leaking through plastic panel
+   STATUS CLUSTER — XDJ-RX3 hardware indicators
    ══════════════════════════════════════════════════════════════════════════ */
-.header-status {
+.header-status-cluster {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 12px 5px 9px;
-  border-radius: 20px;
-  /* Recessed pill housing */
-  background: linear-gradient(135deg, #0E1510, #111A12);
-  border: 1px solid rgba(40,205,65,.15);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .12em;
-  color: rgba(40,205,65,.75);
-  box-shadow:
-    inset 0 1px 3px rgba(0,0,0,.4),
-    0 0 12px rgba(40,205,65,.08);
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #111216, #0d0e11);
+  border: 1px solid rgba(0,0,0,.6);
+  border-top-color: rgba(255,255,255,.04);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.5);
 }
 
-.header-led {
-  width: 8px;
-  height: 8px;
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  color: rgba(255,255,255,.25);
+}
+
+.status-led {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #5AFF70, #28CD41);
-  /* Light leaking through translucent plastic */
-  box-shadow:
-    0 0 4px 1px rgba(40,205,65,.9),
-    0 0 10px 3px rgba(40,205,65,.45),
-    0 0 20px 6px rgba(40,205,65,.18);
-  filter: blur(.3px);
-  animation: led-pulse 2.4s ease-in-out infinite;
   flex-shrink: 0;
 }
 
-@keyframes led-pulse {
-  0%,100% {
-    opacity: 1;
-    box-shadow: 0 0 4px 1px rgba(40,205,65,.9), 0 0 10px 3px rgba(40,205,65,.45), 0 0 20px 6px rgba(40,205,65,.18);
-  }
-  50% {
-    opacity: .6;
-    box-shadow: 0 0 2px 0px rgba(40,205,65,.6), 0 0 6px 2px rgba(40,205,65,.25), 0 0 12px 4px rgba(40,205,65,.1);
-  }
+.status-led--green {
+  background: radial-gradient(circle at 35% 30%, #6fff85, #28cd41);
+  box-shadow: 0 0 4px #28cd41, 0 0 10px rgba(40,205,65,.5);
+  animation: led-pulse-green 2.4s ease-in-out infinite;
+}
+.status-online { color: rgba(61,212,87,.8); }
+
+.status-led--blue {
+  background: radial-gradient(circle at 35% 30%, #80b8ff, #4d8fff);
+  box-shadow: 0 0 4px #4d8fff, 0 0 10px rgba(77,143,255,.5);
+}
+
+.status-led--orange {
+  background: radial-gradient(circle at 35% 30%, #ffb06a, #ff8040);
+  box-shadow: 0 0 4px #ff8040, 0 0 10px rgba(255,128,64,.5);
+}
+
+.status-led--blink {
+  animation: led-blink .6s ease-in-out infinite;
+}
+
+@keyframes led-pulse-green {
+  0%,100% { opacity: 1; box-shadow: 0 0 4px #28cd41, 0 0 10px rgba(40,205,65,.5); }
+  50%      { opacity: .55; box-shadow: 0 0 2px #28cd41, 0 0 5px rgba(40,205,65,.2); }
+}
+
+@keyframes led-blink {
+  0%,100% { opacity: 1; }
+  50%     { opacity: .2; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
