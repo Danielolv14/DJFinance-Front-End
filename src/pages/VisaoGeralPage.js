@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { deleteShow } from '../services/api';
 import ItinerarioModal from '../components/ItinerarioModal';
+import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── constants ─── */
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -319,6 +320,7 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
 
 /* ═══════════════ PAGE ═══════════════ */
 export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }) {
+  const isMobile = useIsMobile();
   const [busca,        setBusca]        = useState('');
   const [filtroStatus, setFiltroStatus] = useState('TODOS');
   const [filtroAno,    setFiltroAno]    = useState('TODOS');
@@ -382,20 +384,20 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
   ];
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
+    <div style={{ padding: isMobile ? '0' : '24px 28px', maxWidth: 1400, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
 
       {/* ── Page header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <LedDot color="#9a7ef8" />
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: 'rgba(154,126,248,0.7)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             DECK 3 · SHOWS
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
             Visão Geral
           </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}>
             {shows.length} SHOWS NO SISTEMA
           </span>

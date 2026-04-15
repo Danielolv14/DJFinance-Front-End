@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStatsContratantes, getStatsLocais, normalizarLocal, normalizarContratante } from '../services/api';
+import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── helpers ─── */
 function moeda(v) {
@@ -281,6 +282,7 @@ function ModalMerge({ grupo, tipo, onSalvar, onFechar }) {
 
 /* ═══════════════ PAGE ═══════════════ */
 export default function CRMPage({ shows }) {
+  const isMobile = useIsMobile();
   const [aba,          setAba]          = useState('locais');
   const [contratantes, setContratantes] = useState([]);
   const [locais,       setLocais]       = useState([]);
@@ -320,19 +322,19 @@ export default function CRMPage({ shows }) {
   ].filter(Boolean);
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1200, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
+    <div style={{ padding: isMobile ? '0' : '24px 28px', maxWidth: 1200, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
 
       {/* ── Page header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <LedDot color={ACCENT} />
         <div>
           <div style={{ fontSize: 11, color: `${ACCENT}99`, letterSpacing: '0.2em', textTransform: 'uppercase' }}>DECK 4 · CRM</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>Relacionamentos</div>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>Relacionamentos</div>
         </div>
       </div>
 
       {/* ── KPIs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
         {kpis.map((k, i) => (
           <motion.div
             key={i}

@@ -7,6 +7,7 @@ import CRMPage         from './pages/CRMPage';
 import FechamentoMensal from './components/FechamentoMensal';
 import ImportarCSV     from './components/ImportarCSV';
 import { getShows, getBloqueios } from './services/api';
+import useIsMobile from './hooks/useIsMobile';
 import './App.css';
 
 const ABAS = [
@@ -19,6 +20,7 @@ const ABAS = [
 ];
 
 export default function App() {
+  const isMobile = useIsMobile();
   const [aba, setAba]                       = useState('dashboard');
   const [shows, setShows]                   = useState([]);
   const [bloqueios, setBloqueios]           = useState([]);
@@ -64,7 +66,6 @@ export default function App() {
                 <circle cx="16" cy="16" r="6"  stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
                 <circle cx="16" cy="16" r="3"  fill="#1A6EFA" opacity="0.9"/>
                 <circle cx="16" cy="16" r="1.4" fill="#0a0b0e"/>
-                {/* Tick marks */}
                 {[0,45,90,135,180,225,270,315].map((deg,i) => (
                   <line key={i}
                     x1={16 + 13*Math.cos(deg*Math.PI/180)}
@@ -76,10 +77,12 @@ export default function App() {
                 ))}
               </svg>
             </div>
-            <div className="logo-text-block">
-              <div className="logo-brand">PIONEER DJ</div>
-              <div className="logo-product">XDJ <span className="logo-accent">FINANCE</span></div>
-            </div>
+            {!isMobile && (
+              <div className="logo-text-block">
+                <div className="logo-brand">PIONEER DJ</div>
+                <div className="logo-product">XDJ <span className="logo-accent">FINANCE</span></div>
+              </div>
+            )}
           </div>
 
           {/* ── Hardware nav buttons ── */}
@@ -91,10 +94,9 @@ export default function App() {
                 style={{ '--btn-color': a.color }}
                 onClick={() => { setAba(a.id); if (a.id !== 'cadastro') setShowParaEditar(null); }}
               >
-                {/* LED indicator strip */}
                 <span className="nav-led" />
                 <span className="nav-label">{a.label}</span>
-                <span className="nav-shortcut">{a.shortcut}</span>
+                {!isMobile && <span className="nav-shortcut">{a.shortcut}</span>}
                 {a.id === 'visao' && shows.length > 0 && (
                   <span className="nav-badge">{shows.length}</span>
                 )}
@@ -102,23 +104,25 @@ export default function App() {
             ))}
           </nav>
 
-          {/* ── Status cluster ── */}
-          <div className="header-status-cluster">
-            <div className="status-item status-online">
-              <span className="status-led status-led--green" />
-              <span>ONLINE</span>
-            </div>
-            <div className="status-item">
-              <span className="status-led status-led--blue" />
-              <span>SYNC</span>
-            </div>
-            {loading && (
-              <div className="status-item">
-                <span className="status-led status-led--orange status-led--blink" />
-                <span>LOAD</span>
+          {/* ── Status cluster — hidden on mobile ── */}
+          {!isMobile && (
+            <div className="header-status-cluster">
+              <div className="status-item status-online">
+                <span className="status-led status-led--green" />
+                <span>ONLINE</span>
               </div>
-            )}
-          </div>
+              <div className="status-item">
+                <span className="status-led status-led--blue" />
+                <span>SYNC</span>
+              </div>
+              {loading && (
+                <div className="status-item">
+                  <span className="status-led status-led--orange status-led--blink" />
+                  <span>LOAD</span>
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
       </header>
@@ -133,7 +137,7 @@ export default function App() {
         {aba === 'crm'        && <CRMPage shows={shows} />}
         {aba === 'cadastro'   && (
           <>
-            <div style={{ padding: '24px 28px 0', maxWidth: 860, margin: '0 auto' }}>
+            <div style={{ padding: isMobile ? '0 0 16px' : '24px 28px 0', maxWidth: 860, margin: '0 auto' }}>
               <ImportarCSV onImportado={carregarShows} />
             </div>
             <CadastroPage

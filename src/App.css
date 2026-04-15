@@ -212,6 +212,7 @@ body::after {
   gap: 2px;
   padding: 7px 14px 6px;
   min-width: 76px;
+  min-height: 44px; /* touch target */
   border-radius: 4px;
   cursor: pointer;
   transition: all .12s ease;
@@ -383,9 +384,11 @@ body::after {
 .main {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 28px 24px 60px;
+  padding: 20px 18px 60px;
   position: relative;
   z-index: 1;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Dashboard takes full width with no extra padding */

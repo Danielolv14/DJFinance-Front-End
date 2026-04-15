@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createShow, updateShow } from '../services/api';
+import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── constants ─── */
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -206,6 +207,7 @@ function ToggleCard({ name, checked, onChange, label, sub, color = ACCENT }) {
 
 /* ═══════════════ PAGE ═══════════════ */
 export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao, bloqueios = [] }) {
+  const isMobile = useIsMobile();
   const editando = !!showParaEditar;
   const [form, setForm]         = useState(VAZIO);
   const [erros, setErros]       = useState({});
@@ -315,23 +317,24 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
     }
   }
 
-  const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 };
-  const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 };
+  const grid2 = { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 };
+  const grid3 = { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 14 };
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 860, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
+    <div style={{ padding: isMobile ? '0' : '24px 28px', maxWidth: 860, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
 
       {/* ── Page header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <span style={{
           width: 8, height: 8, borderRadius: '50%',
           background: ACCENT, boxShadow: `0 0 8px ${ACCENT}`,
+          flexShrink: 0,
         }} />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: `${ACCENT}99`, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             DECK 5 · {editando ? 'EDITAR SHOW' : 'CADASTRAR'}
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
             {editando ? showParaEditar.evento : 'Novo Show'}
           </div>
         </div>
