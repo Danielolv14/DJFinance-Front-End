@@ -52,14 +52,6 @@ function generateWPP(showsByDate, extras) {
       lines.push(`*${num}. ${(show.evento || '').toUpperCase()}*`);
       lines.push(`📍 *Local:* ${show.endereco || '—'}`);
       lines.push(`⏱ *Início:* ${show.horaInicio || '—'}    ⏳ *Duração:* ${show.duracao || '—'}`);
-      lines.push(`💥 *Efeitos:* ${ex.efeitos ? 'Sim ✅' : 'Não 👎🏻'}    💃🏻 *Dançarinas:* ${ex.dancarias ? 'Sim ✅' : 'Não 👎🏻'}`);
-      if (idx === 0) {
-        lines.push(`🗺 *Trajeto (Casa → Evento ${num}):* ${traj ? traj + ' min' : '—'}`);
-        lines.push(`⏰ *Saída de Casa:* ${saida || '—'}`);
-      } else {
-        lines.push(`🗺 *Trajeto (Ev.${idx} → Ev.${num}):* ${traj ? traj + ' min' : '—'}`);
-        lines.push(`⏰ *Saída do Evento ${idx}:* ${saida || '—'}`);
-      }
       lines.push(`🍾 *Rider:* ${rider}`);
       lines.push(`📞 *Contato:* ${(show.contratante || '—').toUpperCase()}`);
     });
@@ -74,361 +66,231 @@ function generateWPP(showsByDate, extras) {
 function buildPDFHtml(showsByDate, extras) {
   const dates = Object.keys(showsByDate).sort();
   const totalShows = Object.values(showsByDate).reduce((a,b) => a + b.length, 0);
+  const accentColors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6'];
 
-  const eventColors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+  // Global show counter for numbering across dates
+  let globalIdx = 0;
 
-  let eventsHtml = '';
+  let bodyHtml = '';
   dates.forEach((date, dateIdx) => {
-    const shows = showsByDate[date];
-    if (dateIdx > 0) eventsHtml += `<div class="page-break"></div>`;
+    const dayShows = showsByDate[date];
+    const d = new Date(date + 'T12:00:00');
 
-    eventsHtml += `
-      <div class="date-section">
-        <div class="date-header">
-          <div class="date-badge">
-            <span class="date-day">${new Date(date+'T12:00:00').getDate()}</span>
-            <span class="date-rest">${MESES_FULL[new Date(date+'T12:00:00').getMonth()].slice(0,3).toUpperCase()} ${new Date(date+'T12:00:00').getFullYear()}</span>
-          </div>
-          <div class="date-info">
-            <div class="date-full">${fmtDateLong(date)}</div>
-            <div class="date-count">${shows.length} evento${shows.length !== 1 ? 's' : ''} programado${shows.length !== 1 ? 's' : ''}</div>
-          </div>
-        </div>`;
+    bodyHtml += `
+      <div class="date-row">
+        <div class="date-badge">
+          <span class="date-day">${d.getDate()}</span>
+          <span class="date-mon">${MESES_FULL[d.getMonth()].slice(0,3).toUpperCase()}</span>
+        </div>
+        <div class="date-label">
+          <span class="date-full">${fmtDateLong(date)}</span>
+          <span class="date-count">${dayShows.length} evento${dayShows.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>`;
 
-    shows.forEach((show, idx) => {
+    dayShows.forEach((show, idx) => {
       const ex    = extras[show.id] || {};
-      const num   = idx + 1;
-      const traj  = ex.tempoTrajeto ?? '';
-      const saida = ex.horaSaida ?? '';
-      const color = eventColors[idx % eventColors.length];
-      const isFirst = idx === 0;
+      const num   = ++globalIdx;
+      const col   = accentColors[(globalIdx - 1) % accentColors.length];
+      const rider = ex.rider ?? (show.rider || 'Combo de Gin');
 
-      eventsHtml += `
-        <div class="event-card">
-          <div class="event-header" style="border-left: 5px solid ${color};">
-            <div class="event-num-badge" style="background:${color}18; color:${color}; border: 1.5px solid ${color}40;">
-              ${String(num).padStart(2,'0')}
+      const statusBg  = show.status === 'CONFIRMADO' ? '#dcfce7' : show.status === 'PENDENTE' ? '#fef9c3' : '#f3f4f6';
+      const statusCol = show.status === 'CONFIRMADO' ? '#15803d' : show.status === 'PENDENTE' ? '#92400e' : '#6b7280';
+
+      bodyHtml += `
+        <div class="event-row" style="border-left: 4px solid ${col};">
+          <div class="ev-num" style="color:${col}; border-color:${col}40; background:${col}12;">${String(num).padStart(2,'0')}</div>
+          <div class="ev-main">
+            <div class="ev-name">${(show.evento || '—').toUpperCase()}
+              ${show.status ? `<span class="ev-status" style="background:${statusBg}; color:${statusCol};">${show.status}</span>` : ''}
             </div>
-            <div class="event-header-info">
-              <div class="event-name">${(show.evento || '—').toUpperCase()}</div>
-              <div class="event-time">
-                ${show.horaInicio ? `⏱ ${show.horaInicio}` : ''}
-                ${show.duracao ? `&nbsp;&nbsp;⏳ ${show.duracao}` : ''}
-              </div>
-            </div>
-            ${show.status ? `<div class="event-status" style="background:${show.status==='CONFIRMADO'?'#dcfce7':show.status==='PENDENTE'?'#fef9c3':'#fee2e2'}; color:${show.status==='CONFIRMADO'?'#15803d':show.status==='PENDENTE'?'#854d0e':'#991b1b'};">${show.status}</div>` : ''}
+            <div class="ev-addr">📍 ${show.endereco || '—'}</div>
           </div>
-
-          <div class="event-body">
-            <div class="fields-grid">
-
-              <div class="field full-width">
-                <div class="field-icon">📍</div>
-                <div>
-                  <div class="field-label">Endereço / Local</div>
-                  <div class="field-value">${show.endereco || '—'}</div>
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="field-icon">📞</div>
-                <div>
-                  <div class="field-label">Contato do Contratante</div>
-                  <div class="field-value">${(show.contratante || '—').toUpperCase()}</div>
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="field-icon">🍾</div>
-                <div>
-                  <div class="field-label">Rider Técnico</div>
-                  <div class="field-value">${ex.rider ?? (show.rider || 'Combo de Gin')}</div>
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="field-icon">💥</div>
-                <div>
-                  <div class="field-label">Efeitos</div>
-                  <div class="field-value pill ${ex.efeitos ? 'pill-yes' : 'pill-no'}">${ex.efeitos ? 'Sim ✅' : 'Não ✖'}</div>
-                </div>
-              </div>
-
-              <div class="field">
-                <div class="field-icon">💃🏻</div>
-                <div>
-                  <div class="field-label">Dançarinas</div>
-                  <div class="field-value pill ${ex.dancarias ? 'pill-yes' : 'pill-no'}">${ex.dancarias ? 'Sim ✅' : 'Não ✖'}</div>
-                </div>
-              </div>
-
-              <div class="field" style="border-left: 3px solid ${color}20; padding-left: 12px;">
-                <div class="field-icon">🗺</div>
-                <div>
-                  <div class="field-label">${isFirst ? 'Trajeto (Casa → Evento 1)' : `Trajeto (Ev.${idx} → Ev.${num})`}</div>
-                  <div class="field-value ${traj ? 'field-accent' : ''}">${traj ? traj + ' minutos' : '—'}</div>
-                </div>
-              </div>
-
-              <div class="field" style="border-left: 3px solid ${color}20; padding-left: 12px;">
-                <div class="field-icon">⏰</div>
-                <div>
-                  <div class="field-label">${isFirst ? 'Horário de Saída (Casa)' : `Horário de Saída (Evento ${idx})`}</div>
-                  <div class="field-value ${saida ? 'field-accent' : ''}">${saida || '—'}</div>
-                </div>
-              </div>
-
-            </div>
+          <div class="ev-time">
+            ${show.horaInicio ? `<span class="time-badge" style="background:${col}15; color:${col};">⏱ ${show.horaInicio}</span>` : ''}
+            ${show.duracao    ? `<span class="time-badge" style="background:#f3f4f6; color:#6b7280;">⏳ ${show.duracao}</span>`     : ''}
+          </div>
+          <div class="ev-rider">
+            <div class="field-lbl">Rider</div>
+            <div class="field-val">🍾 ${rider}</div>
+          </div>
+          <div class="ev-contact">
+            <div class="field-lbl">Contato</div>
+            <div class="field-val">📞 ${(show.contratante || '—').toUpperCase()}</div>
           </div>
         </div>`;
     });
-
-    eventsHtml += `</div>`; // date-section
   });
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Itinerário Druds</title>
 <style>
+  @page { size: A4; margin: 10mm 12mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: 'Segoe UI', -apple-system, Arial, sans-serif;
-    background: #f5f5f7;
+    background: white;
     color: #1a1a2e;
-    font-size: 13px;
+    font-size: 11px;
+    line-height: 1.4;
   }
 
-  /* ─ Document header ─ */
+  /* ── Header ── */
   .doc-header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
     color: #fff;
-    padding: 36px 48px 32px;
+    padding: 16px 20px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    page-break-inside: avoid;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .doc-brand {
-    font-size: 10px;
-    letter-spacing: 4px;
+    font-size: 8px;
+    letter-spacing: 3.5px;
     text-transform: uppercase;
-    opacity: 0.45;
-    margin-bottom: 8px;
+    opacity: 0.4;
+    margin-bottom: 4px;
   }
   .doc-title {
-    font-size: 30px;
+    font-size: 22px;
     font-weight: 800;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
     line-height: 1;
   }
   .doc-title span { color: #818cf8; }
-  .doc-subtitle {
-    margin-top: 8px;
-    font-size: 13px;
-    opacity: 0.55;
-    letter-spacing: 0.3px;
-  }
-  .doc-meta {
-    text-align: right;
-    font-size: 11px;
-    opacity: 0.5;
-    line-height: 1.8;
-  }
-  .doc-meta strong { opacity: 1; font-size: 18px; display: block; margin-bottom: 2px; }
+  .doc-subtitle { font-size: 10px; opacity: 0.45; margin-top: 3px; }
+  .doc-meta { text-align: right; font-size: 10px; opacity: 0.5; line-height: 1.7; }
+  .doc-meta strong { font-size: 24px; opacity: 1; display: block; line-height: 1; }
 
-  /* ─ Date section ─ */
-  .date-section { padding: 32px 48px 8px; }
-
-  .date-header {
+  /* ── Date row ── */
+  .date-row {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid #e2e2ea;
+    gap: 10px;
+    margin: 12px 0 6px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #e5e7eb;
   }
   .date-badge {
     background: #1a1a2e;
     color: white;
-    border-radius: 12px;
-    padding: 10px 16px;
+    border-radius: 7px;
+    padding: 5px 9px;
     text-align: center;
-    min-width: 70px;
+    min-width: 44px;
     flex-shrink: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  .date-day {
-    display: block;
-    font-size: 26px;
-    font-weight: 800;
-    line-height: 1;
-  }
-  .date-rest {
-    display: block;
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    opacity: 0.65;
-    margin-top: 3px;
-    text-transform: uppercase;
-  }
-  .date-full {
-    font-size: 16px;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin-bottom: 3px;
-  }
-  .date-count {
-    font-size: 12px;
-    color: #6b7280;
-  }
+  .date-day  { display: block; font-size: 17px; font-weight: 800; line-height: 1; }
+  .date-mon  { display: block; font-size: 8px; letter-spacing: 1px; opacity: 0.6; margin-top: 1px; text-transform: uppercase; }
+  .date-full { font-size: 12px; font-weight: 700; color: #1a1a2e; }
+  .date-count { font-size: 10px; color: #9ca3af; margin-left: 8px; }
 
-  /* ─ Event card ─ */
-  .event-card {
-    background: #ffffff;
-    border-radius: 14px;
-    overflow: hidden;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
-    page-break-inside: avoid;
-  }
-
-  .event-header {
-    padding: 16px 22px;
-    display: flex;
+  /* ── Event row ── */
+  .event-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 100px 130px 130px;
+    gap: 10px;
     align-items: center;
-    gap: 14px;
-    background: #fafafa;
-    border-bottom: 1px solid #f0f0f5;
+    background: #fff;
+    border: 1px solid #f0f0f5;
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 5px;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  .event-num-badge {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
+
+  .ev-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1.5px solid;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 800;
     flex-shrink: 0;
     letter-spacing: -0.5px;
   }
-  .event-header-info { flex: 1; }
-  .event-name {
-    font-size: 15px;
-    font-weight: 800;
-    color: #1a1a2e;
-    letter-spacing: 0.3px;
-  }
-  .event-time {
+
+  .ev-name {
     font-size: 12px;
-    color: #6b7280;
-    margin-top: 2px;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: 0.2px;
+    margin-bottom: 2px;
   }
-  .event-status {
+  .ev-addr { font-size: 10px; color: #6b7280; }
+
+  .ev-status {
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .ev-time { display: flex; flex-direction: column; gap: 3px; }
+  .time-badge {
+    display: inline-block;
     font-size: 10px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    flex-shrink: 0;
+    padding: 2px 7px;
+    border-radius: 5px;
+    white-space: nowrap;
   }
 
-  .event-body { padding: 20px 22px; }
+  .field-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 0.7px; color: #9ca3af; font-weight: 600; margin-bottom: 2px; }
+  .field-val { font-size: 10.5px; font-weight: 500; color: #111827; }
 
-  .fields-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  .field {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-  }
-  .full-width { grid-column: 1 / -1; }
-
-  .field-icon {
-    font-size: 16px;
-    flex-shrink: 0;
-    margin-top: 1px;
-    line-height: 1;
-  }
-  .field-label {
-    font-size: 9.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #9ca3af;
-    margin-bottom: 3px;
-    font-weight: 600;
-  }
-  .field-value {
-    font-size: 13px;
-    font-weight: 500;
-    color: #111827;
-  }
-  .field-accent {
-    color: #4f46e5;
-    font-weight: 700;
-  }
-
-  .pill {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .pill-yes { background: #dcfce7; color: #15803d; }
-  .pill-no  { background: #f3f4f6; color: #6b7280; }
-
-  /* ─ Footer ─ */
+  /* ── Footer ── */
   .doc-footer {
-    margin: 8px 48px 40px;
-    padding-top: 16px;
+    margin-top: 14px;
+    padding-top: 8px;
     border-top: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 10.5px;
+    font-size: 9px;
     color: #9ca3af;
   }
   .footer-brand { font-weight: 700; color: #6366f1; letter-spacing: 1px; }
-
-  /* ─ Print ─ */
-  .page-break { page-break-before: always; height: 0; }
-
-  @media print {
-    body { background: white; }
-    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .event-num-badge, .event-status, .pill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
 </style>
 </head>
 <body>
 
-<!-- Document Header -->
 <div class="doc-header">
   <div>
     <div class="doc-brand">Agência DRUDS · Itinerário Oficial</div>
     <div class="doc-title">ITINERÁRIO <span>DRUDS</span></div>
-    <div class="doc-subtitle">Documento gerado em ${nowStamp()}</div>
+    <div class="doc-subtitle">Gerado em ${nowStamp()}</div>
   </div>
   <div class="doc-meta">
     <strong>${totalShows}</strong>
-    evento${totalShows !== 1 ? 's' : ''} · ${dates.length} dia${dates.length !== 1 ? 's' : ''}
+    show${totalShows !== 1 ? 's' : ''} · ${dates.length} dia${dates.length !== 1 ? 's' : ''}
   </div>
 </div>
 
-${eventsHtml}
+${bodyHtml}
 
-<!-- Footer -->
 <div class="doc-footer">
-  <div><span class="footer-brand">DRUDS</span> &nbsp;·&nbsp; Itinerário Oficial</div>
-  <div>Gerado em ${nowStamp()}</div>
+  <span><span class="footer-brand">DRUDS</span> · Itinerário Oficial</span>
+  <span>Gerado em ${nowStamp()}</span>
 </div>
 
 </body>
@@ -714,53 +576,6 @@ export default function ItinerarioModal({ shows, onClose }) {
                           />
                         </div>
 
-                        {/* Extras row */}
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                          <Toggle checked={!!ex.efeitos}   onChange={e => setExtra(show.id,'efeitos',e.target.checked)}   label="💥 EFEITOS" />
-                          <Toggle checked={!!ex.dancarias} onChange={e => setExtra(show.id,'dancarias',e.target.checked)} label="💃 DANÇARINAS" />
-
-                          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                            {/* Trajeto */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em' }}>🗺 TRAJETO</span>
-                              <input
-                                type="number" min="0" value={ex.tempoTrajeto ?? ''}
-                                onChange={e => setExtra(show.id, 'tempoTrajeto', e.target.value)}
-                                placeholder="min"
-                                style={{
-                                  width: 56, background: '#0c0d12',
-                                  border: '1px solid rgba(255,255,255,0.1)',
-                                  borderRadius: 4, color: col,
-                                  fontFamily: "'JetBrains Mono', monospace",
-                                  fontSize: 13, fontWeight: 800,
-                                  padding: '5px 8px', outline: 'none', textAlign: 'center',
-                                }}
-                                onFocus={e => e.target.style.borderColor = col}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                              />
-                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'JetBrains Mono', monospace" }}>MIN</span>
-                            </div>
-                            {/* Saída manual */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em' }}>⏰ SAÍDA</span>
-                              <input
-                                type="time"
-                                value={ex.horaSaida ?? ''}
-                                onChange={e => setExtra(show.id, 'horaSaida', e.target.value)}
-                                style={{
-                                  background: '#0c0d12',
-                                  border: '1px solid rgba(255,255,255,0.1)',
-                                  borderRadius: 4, color: col,
-                                  fontFamily: "'JetBrains Mono', monospace",
-                                  fontSize: 13, fontWeight: 800,
-                                  padding: '5px 8px', outline: 'none', colorScheme: 'dark',
-                                }}
-                                onFocus={e => e.target.style.borderColor = col}
-                                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                              />
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     );
                   })}
