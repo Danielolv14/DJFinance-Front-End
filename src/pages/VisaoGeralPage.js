@@ -424,7 +424,7 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
       </div>
 
       {/* ── KPI Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 10, marginBottom: 20 }}>
+      <div className="visao-kpi-grid">
         {kpis.map((k, i) => (
           <motion.div
             key={i}

@@ -459,7 +459,7 @@ export default function DashboardPage({ shows }) {
       </motion.div>
 
       {/* ══ KPI CARDS ══ */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="dash-kpi-grid">
         <KpiCard icon={<TrendingUp size={16}/>} label="Faturamento Bruto" value={moeda(totalBruto)}
           sub={`${confirmados.length} shows`} color="hsl(217 90% 55%)" delay={0} />
         <KpiCard icon={<DollarSign size={16}/>} label="Lucro Líquido" value={moeda(lucroLiquido)}
@@ -494,7 +494,7 @@ export default function DashboardPage({ shows }) {
       </Card>
 
       {/* ══ MAIN GRID ══ */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 1.6fr 1fr' }}>
+      <div className="dash-main-grid">
 
         {/* ─── LEFT: Review do Mês ─── */}
         <Card delay={0.25}>
@@ -589,7 +589,7 @@ export default function DashboardPage({ shows }) {
       </div>
 
       {/* ══ BOTTOM ROW ══ */}
-      <div className="grid grid-cols-2 gap-5 mt-5">
+      <div className="dash-bottom-grid">
 
         {/* Ranking Contratantes */}
         <Card delay={0.4}>
