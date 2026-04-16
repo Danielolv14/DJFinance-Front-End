@@ -145,6 +145,7 @@ export default function App() {
               showParaEditar={showParaEditar}
               onCancelarEdicao={() => setShowParaEditar(null)}
               bloqueios={bloqueios}
+              shows={shows}
             />
           </>
         )}
