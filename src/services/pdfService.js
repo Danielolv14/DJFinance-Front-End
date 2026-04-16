@@ -77,7 +77,7 @@ export async function gerarPDFFechamento(dados) {
   doc.setFont('helvetica','bold');
   doc.setFontSize(6.5);
   doc.setTextColor(255, 255, 255);
-  doc.text('XDJ FINANCE  ·  PIONEER DJ', 40, 32.8, { align:'center' });
+  doc.text('DRUDS FINANCEIRO', 40, 32.8, { align:'center' });
 
   // Month/year (right-aligned)
   doc.setFont('helvetica','bold');
@@ -315,7 +315,7 @@ export async function gerarPDFFechamento(dados) {
     doc.setFont('helvetica','normal');
     doc.setFontSize(6.5);
     doc.setTextColor(...FG3);
-    doc.text('Sistema de Fechamento Financeiro', 28, pH - 7);
+    doc.text('Druds Financeiro', 28, pH - 7);
 
     doc.setFontSize(6.5);
     doc.text(`Página ${pg} de ${pageCount}  ·  ${nomeMes} / ${dados.ano}`, W - 14, pH - 7, { align:'right' });

@@ -448,11 +448,8 @@ export default function DashboardPage({ shows }) {
         className="flex items-center justify-between mb-8"
       >
         <div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: '0.4em', color: 'hsl(220 10% 35%)', textTransform: 'uppercase', marginBottom: 2 }}>
-            Pioneer DJ
-          </div>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 28, fontWeight: 700, color: 'hsl(220 15% 88%)', lineHeight: 1 }}>
-            XDJ <span style={{ color: 'hsl(217 90% 62%)', textShadow: '0 0 20px hsl(217 90% 55% / 0.4)' }}>FINANCE</span>
+            DRUDS <span style={{ color: 'hsl(217 90% 62%)', textShadow: '0 0 20px hsl(217 90% 55% / 0.4)' }}>FINANCEIRO</span>
           </div>
         </div>
 
