@@ -4,6 +4,7 @@ import VisaoGeralPage  from './pages/VisaoGeralPage';
 import DashboardPage   from './pages/DashboardPage';
 import CalendarioPage  from './pages/CalendarioPage';
 import CRMPage         from './pages/CRMPage';
+import PressKitPage    from './pages/PressKitPage';
 import FechamentoMensal from './components/FechamentoMensal';
 import ImportarCSV     from './components/ImportarCSV';
 import { getShows, getBloqueios } from './services/api';
@@ -17,6 +18,7 @@ const ABAS = [
   { id:'crm',        label:'CRM',        color:'#ff8040', shortcut:'F4' },
   { id:'cadastro',   label:'Cadastrar',  color:'#ffd60a', shortcut:'F5' },
   { id:'fechamento', label:'Fechamento', color:'#ff6058', shortcut:'F6' },
+  { id:'presskit',   label:'Press Kit',  color:'#22d3ee', shortcut:'F7' },
 ];
 
 export default function App() {
@@ -79,8 +81,7 @@ export default function App() {
             </div>
             {!isMobile && (
               <div className="logo-text-block">
-                <div className="logo-brand">PIONEER DJ</div>
-                <div className="logo-product">XDJ <span className="logo-accent">FINANCE</span></div>
+                <div className="logo-product">DRUDS <span className="logo-accent">FINANCEIRO</span></div>
               </div>
             )}
           </div>
@@ -150,6 +151,7 @@ export default function App() {
           </>
         )}
         {aba === 'fechamento' && <FechamentoMensal />}
+        {aba === 'presskit'   && <PressKitPage />}
       </main>
     </div>
   );
