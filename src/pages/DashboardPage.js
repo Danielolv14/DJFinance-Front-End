@@ -418,6 +418,25 @@ export default function DashboardPage({ shows }) {
   const prevMes = () => setMesSel(m => m > 1 ? m - 1 : 12);
   const nextMes = () => setMesSel(m => m < 12 ? m + 1 : 1);
 
+  /* ── Automações ─────────────────────────────────────────── */
+  const proximos7Dias = useMemo(() => {
+    const now = new Date();
+    const em7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return shows
+      .filter(s => { const d = new Date(s.data + 'T00:00:00'); return d >= now && d <= em7; })
+      .sort((a,b) => new Date(a.data) - new Date(b.data));
+  }, [shows]);
+
+  const projecaoAnual = useMemo(() => {
+    if (anoSel !== anoAtual) return null;
+    const mesesComDados = waveformData.filter(d => d.valor > 0).length;
+    if (mesesComDados === 0) return null;
+    const mediasMensal  = totalBruto / mesesComDados;
+    const mesesRestantes = 12 - mesAtual;
+    if (mesesRestantes <= 0) return null;
+    return Math.round(totalBruto + mediasMensal * mesesRestantes);
+  }, [anoSel, anoAtual, waveformData, totalBruto, mesAtual]);
+
   /* ─────────────────────────────────────────────────────── */
   return (
     <div className="min-h-screen" style={{ background: 'hsl(220 12% 4%)', padding: '28px 28px 48px' }}>
@@ -469,6 +488,95 @@ export default function DashboardPage({ shows }) {
         <KpiCard icon={<Music size={16}/>} label="Média por Show" value={moedaK(totalBruto / Math.max(confirmados.length, 1))}
           sub="cache médio" color="hsl(270 70% 60%)" delay={0.18} />
       </div>
+
+      {/* ══ AUTOMAÇÕES ══ */}
+      {(proximos7Dias.length > 0 || pendentes.length > 0 || projecaoAnual) && (
+        <motion.div
+          initial={{ opacity:0, y:8 }}
+          animate={{ opacity:1, y:0 }}
+          transition={{ delay:0.22 }}
+          style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:10, marginBottom:20 }}
+        >
+          {/* Próximos 7 dias */}
+          {proximos7Dias.length > 0 && (
+            <div style={{
+              background:'hsl(217 90% 55% / 0.07)', border:'1px solid hsl(217 90% 55% / 0.22)',
+              borderLeft:'3px solid hsl(217 90% 55%)', borderRadius:12, padding:'14px 16px',
+            }}>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:8, color:'hsl(217 90% 60%)', letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:8 }}>
+                ⚡ PRÓXIMOS 7 DIAS
+              </div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", lineHeight:1, marginBottom:8 }}>
+                <span style={{ fontSize:22, fontWeight:700, color:'hsl(220 15% 88%)' }}>{proximos7Dias.length}</span>
+                <span style={{ fontSize:11, color:'hsl(217 90% 55%)', marginLeft:6 }}>SHOW{proximos7Dias.length !== 1 ? 'S' : ''}</span>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+                {proximos7Dias.slice(0,3).map((s,i) => (
+                  <div key={i} style={{ fontFamily:"'Inter',sans-serif", fontSize:11, color:'hsl(220 10% 48%)', display:'flex', gap:6 }}>
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'hsl(217 90% 50%)', flexShrink:0 }}>
+                      {s.data?.split('-').reverse().join('/')}
+                    </span>
+                    <span style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.evento}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shows pendentes */}
+          {pendentes.length > 0 && (
+            <div style={{
+              background:'hsl(30 95% 55% / 0.07)', border:'1px solid hsl(30 95% 55% / 0.22)',
+              borderLeft:'3px solid hsl(30 95% 55%)', borderRadius:12, padding:'14px 16px',
+            }}>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:8, color:'hsl(30 95% 60%)', letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:8 }}>
+                ⏳ PENDENTES
+              </div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", lineHeight:1, marginBottom:6 }}>
+                <span style={{ fontSize:22, fontWeight:700, color:'hsl(220 15% 88%)' }}>{pendentes.length}</span>
+                <span style={{ fontSize:11, color:'hsl(30 95% 55%)', marginLeft:6 }}>SHOW{pendentes.length !== 1 ? 'S' : ''}</span>
+              </div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:14, fontWeight:700, color:'hsl(30 95% 60%)', marginBottom:2 }}>
+                {moeda(aReceber)}
+              </div>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:10, color:'hsl(220 10% 38%)' }}>
+                aguardando confirmação
+              </div>
+            </div>
+          )}
+
+          {/* Projeção anual */}
+          {projecaoAnual && (
+            <div style={{
+              background:'hsl(150 70% 45% / 0.07)', border:'1px solid hsl(150 70% 45% / 0.22)',
+              borderLeft:'3px solid hsl(150 70% 45%)', borderRadius:12, padding:'14px 16px',
+            }}>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:8, color:'hsl(150 70% 50%)', letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:8 }}>
+                📈 PROJEÇÃO {anoSel}
+              </div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:17, fontWeight:700, color:'hsl(220 15% 88%)', lineHeight:1.1, marginBottom:6 }}>
+                {moeda(projecaoAnual)}
+              </div>
+              <div style={{ height:4, borderRadius:2, background:'hsl(220 8% 12%)', overflow:'hidden', marginBottom:4 }}>
+                <motion.div
+                  initial={{ width:0 }}
+                  animate={{ width:`${Math.min((totalBruto/projecaoAnual)*100, 100)}%` }}
+                  transition={{ duration:1, ease:'easeOut', delay:0.5 }}
+                  style={{ height:'100%', background:'hsl(150 70% 45%)', borderRadius:2 }}
+                />
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between' }}>
+                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:10, color:'hsl(220 10% 38%)' }}>
+                  base: {waveformData.filter(d=>d.valor>0).length} meses
+                </span>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'hsl(150 70% 45%)' }}>
+                  {Math.round((totalBruto/projecaoAnual)*100)}%
+                </span>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* ══ MONTH SELECTOR ══ */}
       <Card delay={0.2} className="mb-6" style={{ padding: '16px 20px' }}>

@@ -34,6 +34,10 @@ function calcularDuracao(inicio, termino) {
   return `${h}h${String(m).padStart(2,'0')}min`;
 }
 
+function moedaFmt(v) {
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+}
+
 function dataBloqueada(data, bloqueios) {
   if (!data || !bloqueios?.length) return null;
   const d = new Date(data + 'T00:00:00');
@@ -206,14 +210,16 @@ function ToggleCard({ name, checked, onChange, label, sub, color = ACCENT }) {
 }
 
 /* ═══════════════ PAGE ═══════════════ */
-export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao, bloqueios = [] }) {
+export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao, bloqueios = [], shows = [] }) {
   const isMobile = useIsMobile();
   const editando = !!showParaEditar;
-  const [form, setForm]         = useState(VAZIO);
-  const [erros, setErros]       = useState({});
-  const [loading, setLoading]   = useState(false);
-  const [sucesso, setSucesso]   = useState('');
-  const [erroGeral, setErroGeral] = useState('');
+  const [form, setForm]               = useState(VAZIO);
+  const [erros, setErros]             = useState({});
+  const [loading, setLoading]         = useState(false);
+  const [sucesso, setSucesso]         = useState('');
+  const [erroGeral, setErroGeral]     = useState('');
+  const [conflito, setConflito]       = useState(null);
+  const [sugestaoCache, setSugestaoCache] = useState(null);
 
   useEffect(() => {
     if (showParaEditar) {
@@ -241,6 +247,7 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
       setForm(VAZIO);
     }
     setSucesso(''); setErroGeral(''); setErros({});
+    setConflito(null); setSugestaoCache(null);
   }, [showParaEditar]);
 
   function handleChange(e) {
@@ -256,6 +263,23 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
       return novo;
     });
     if (erros[name]) setErros(prev => ({ ...prev, [name]: '' }));
+
+    // ── Automação: sugestão de cachê pelo contratante ──
+    if (name === 'contratante') {
+      const trimmed = value.trim().toLowerCase();
+      if (trimmed.length >= 3) {
+        const matches = shows
+          .filter(s =>
+            s.contratante?.trim().toLowerCase() === trimmed &&
+            (s.cache || 0) > 0 &&
+            s.id !== showParaEditar?.id
+          )
+          .sort((a, b) => new Date(b.data) - new Date(a.data));
+        setSugestaoCache(matches.length > 0 ? matches[0].cache : null);
+      } else {
+        setSugestaoCache(null);
+      }
+    }
   }
 
   function handleData(e) {
@@ -263,8 +287,12 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
     if (valor) {
       const d = new Date(valor + 'T00:00:00');
       setForm(prev => ({ ...prev, data: valor, ano: d.getFullYear(), mes: d.getMonth()+1 }));
+      // ── Automação: detecção de conflito de data ──
+      const conflict = shows.find(s => s.data === valor && s.id !== showParaEditar?.id);
+      setConflito(conflict || null);
     } else {
       setForm(prev => ({ ...prev, data: valor }));
+      setConflito(null);
     }
     if (erros.data) setErros(prev => ({ ...prev, data: '' }));
   }
@@ -440,6 +468,37 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
                 </div>
               </Field>
             </div>
+
+            {/* ── Automação: alerta de conflito de data ── */}
+            <AnimatePresence>
+              {conflito && (
+                <motion.div
+                  initial={{ opacity:0, y:-6, height:0 }}
+                  animate={{ opacity:1, y:0, height:'auto' }}
+                  exit={{ opacity:0, y:-6, height:0 }}
+                  style={{ overflow:'hidden' }}
+                >
+                  <div style={{
+                    padding: '10px 14px',
+                    background: 'rgba(255,214,10,0.07)',
+                    border: '1px solid rgba(255,214,10,0.28)',
+                    borderLeft: '3px solid #ffd60a',
+                    borderRadius: 6,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+                  }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>⚠</span>
+                    <span style={{ color: 'rgba(255,255,255,0.55)' }}>
+                      Já existe show nesta data:{' '}
+                      <strong style={{ color: '#ffd60a' }}>{conflito.evento}</strong>
+                      <span style={{ color: 'rgba(255,255,255,0.28)', marginLeft: 6 }}>
+                        ({conflito.status})
+                      </span>
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </SectionPanel>
 
@@ -456,6 +515,49 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
                   placeholder="Ex: 150.00" min="0" step="0.01" />
               </Field>
             </div>
+
+            {/* ── Automação: sugestão de cachê pelo contratante ── */}
+            <AnimatePresence>
+              {sugestaoCache !== null && !form.cache && (
+                <motion.div
+                  initial={{ opacity:0, y:-6, height:0 }}
+                  animate={{ opacity:1, y:0, height:'auto' }}
+                  exit={{ opacity:0, y:-6, height:0 }}
+                  style={{ overflow:'hidden' }}
+                >
+                  <div style={{
+                    padding: '10px 14px',
+                    background: 'rgba(26,110,250,0.07)',
+                    border: '1px solid rgba(26,110,250,0.25)',
+                    borderLeft: '3px solid #1a6efa',
+                    borderRadius: 6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+                  }}>
+                    <span style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      Último cachê com este contratante:{' '}
+                      <strong style={{ color: '#4d8fff' }}>{moedaFmt(sugestaoCache)}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm(prev => ({ ...prev, cache: String(sugestaoCache) }));
+                        setSugestaoCache(null);
+                      }}
+                      style={{
+                        padding: '5px 14px', borderRadius: 4, cursor: 'pointer', flexShrink: 0,
+                        background: 'rgba(26,110,250,0.15)', border: '1px solid rgba(26,110,250,0.3)',
+                        color: '#4d8fff', fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      USAR
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div style={grid2}>
               <ToggleCard
                 name="adiantamento" checked={form.adiantamento} onChange={handleChange}
