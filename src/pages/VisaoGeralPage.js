@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { deleteShow } from '../services/api';
+import { exportarShows } from '../services/excelService';
 import ItinerarioModal from '../components/ItinerarioModal';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -321,12 +322,21 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
 /* ═══════════════ PAGE ═══════════════ */
 export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }) {
   const isMobile = useIsMobile();
-  const [busca,        setBusca]        = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('TODOS');
-  const [filtroAno,    setFiltroAno]    = useState('TODOS');
-  const [ordem,        setOrdem]        = useState('data_desc');
-  const [deletando,    setDeletando]    = useState(null);
-  const [itinerario,   setItinerario]   = useState(false);
+  const [busca,         setBusca]        = useState('');
+  const [filtroStatus,  setFiltroStatus] = useState('TODOS');
+  const [filtroAno,     setFiltroAno]    = useState('TODOS');
+  const [ordem,         setOrdem]        = useState('data_desc');
+  const [deletando,     setDeletando]    = useState(null);
+  const [itinerario,    setItinerario]   = useState(false);
+  const [exportando,    setExportando]   = useState(false);
+
+  async function handleExportar() {
+    if (exportando || shows.length === 0) return;
+    setExportando(true);
+    try { await exportarShows(shows); }
+    catch (e) { console.error('Export error:', e); }
+    finally { setExportando(false); }
+  }
 
   const confirmados = shows.filter(s => s.status === 'CONFIRMADO');
   const pendentes   = shows.filter(s => s.status === 'PENDENTE');
@@ -397,10 +407,39 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
             Visão Geral
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}>
-            {shows.length} SHOWS NO SISTEMA
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+          {!isMobile && (
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}>
+              {shows.length} SHOWS NO SISTEMA
+            </span>
+          )}
+
+          {/* Exportar Excel */}
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={handleExportar}
+            disabled={exportando || shows.length === 0}
+            style={{
+              position: 'relative', overflow: 'hidden',
+              padding: '9px 16px',
+              background: exportando ? 'rgba(61,212,87,0.05)' : 'rgba(61,212,87,0.1)',
+              border: '1px solid rgba(61,212,87,0.35)',
+              borderRadius: 5, cursor: exportando ? 'wait' : 'pointer',
+              color: '#3dd457',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+              boxShadow: '0 0 14px rgba(61,212,87,0.15)',
+              transition: 'all 0.15s',
+              opacity: shows.length === 0 ? 0.4 : 1,
+            }}
+            onMouseEnter={e => { if (!exportando) e.currentTarget.style.background = 'rgba(61,212,87,0.18)'; }}
+            onMouseLeave={e => { if (!exportando) e.currentTarget.style.background = 'rgba(61,212,87,0.1)'; }}
+          >
+            <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#3dd457', borderRadius: '5px 5px 0 0', boxShadow: '0 0 6px #3dd457' }} />
+            {exportando ? '⏳ EXPORTANDO…' : (isMobile ? '📊 XLS' : '📊 EXPORTAR EXCEL')}
+          </motion.button>
+
+          {/* Itinerário */}
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={() => setItinerario(true)}
@@ -420,7 +459,7 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(154,126,248,0.12)'}
           >
             <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#9a7ef8', borderRadius: '5px 5px 0 0', boxShadow: '0 0 6px #9a7ef8' }} />
-            📋 ITINERÁRIO
+            {isMobile ? '📋' : '📋 ITINERÁRIO'}
           </motion.button>
         </div>
       </div>
