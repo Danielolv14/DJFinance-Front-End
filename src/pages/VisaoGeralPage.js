@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { deleteShow } from '../services/api';
 import { exportarShows } from '../services/excelService';
 import ItinerarioModal from '../components/ItinerarioModal';
+import PlanilhaOnlineModal, { usePlanilhaUrl } from '../components/PlanilhaOnlineModal';
 import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── constants ─── */
@@ -329,6 +330,8 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
   const [deletando,     setDeletando]    = useState(null);
   const [itinerario,    setItinerario]   = useState(false);
   const [exportando,    setExportando]   = useState(false);
+  const [planilhaModal, setPlanilhaModal] = useState(false);
+  const [sheetsUrl, setSheetsUrl]         = usePlanilhaUrl();
 
   async function handleExportar() {
     if (exportando || shows.length === 0) return;
@@ -437,6 +440,33 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
           >
             <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#3dd457', borderRadius: '5px 5px 0 0', boxShadow: '0 0 6px #3dd457' }} />
             {exportando ? '⏳ EXPORTANDO…' : (isMobile ? '📊 XLS' : '📊 EXPORTAR EXCEL')}
+          </motion.button>
+
+          {/* Planilha Online */}
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => sheetsUrl ? window.open(sheetsUrl, '_blank') : setPlanilhaModal(true)}
+            style={{
+              position: 'relative', overflow: 'hidden',
+              padding: '9px 16px',
+              background: sheetsUrl ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)',
+              border: `1px solid rgba(52,211,153,${sheetsUrl ? '0.4' : '0.25'})`,
+              borderRadius: 5, cursor: 'pointer',
+              color: '#34d399',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+              boxShadow: sheetsUrl ? '0 0 14px rgba(52,211,153,0.2)' : 'none',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.2)'}
+            onMouseLeave={e => e.currentTarget.style.background = sheetsUrl ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)'}
+            title={sheetsUrl ? 'Abrir Google Sheets' : 'Configurar planilha online'}
+          >
+            <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#34d399', borderRadius: '5px 5px 0 0', opacity: sheetsUrl ? 1 : 0.4 }} />
+            {isMobile
+              ? (sheetsUrl ? '🟢' : '📊')
+              : (sheetsUrl ? '🟢 PLANILHA ONLINE' : '📊 PLANILHA ONLINE')
+            }
           </motion.button>
 
           {/* Itinerário */}
@@ -591,6 +621,12 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
             shows={shows}
             onClose={() => setItinerario(false)}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {planilhaModal && (
+          <PlanilhaOnlineModal onClose={() => setPlanilhaModal(false)} />
         )}
       </AnimatePresence>
     </div>
