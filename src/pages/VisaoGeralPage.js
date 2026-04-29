@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { deleteShow } from '../services/api';
 import { exportarShows } from '../services/excelService';
 import ItinerarioModal from '../components/ItinerarioModal';
-import PlanilhaOnlineModal, { usePlanilhaUrl } from '../components/PlanilhaOnlineModal';
+import { usePlanilhaUrl } from '../components/PlanilhaOnlineModal';
 import useIsMobile from '../hooks/useIsMobile';
 
 /* ─── constants ─── */
@@ -321,7 +321,8 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
 }
 
 /* ═══════════════ PAGE ═══════════════ */
-export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }) {
+export default function VisaoGeralPage({ shows: showsAll, loading, onEditar, onAtualizar }) {
+  const shows = showsAll.filter(s => !s.data || parseInt(s.data.substring(0, 4), 10) >= 2025);
   const isMobile = useIsMobile();
   const [busca,         setBusca]        = useState('');
   const [filtroStatus,  setFiltroStatus] = useState('TODOS');
@@ -330,7 +331,8 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
   const [deletando,     setDeletando]    = useState(null);
   const [itinerario,    setItinerario]   = useState(false);
   const [exportando,    setExportando]   = useState(false);
-  const [planilhaModal, setPlanilhaModal] = useState(false);
+  const [showUrlInput,  setShowUrlInput] = useState(false);
+  const [urlInput,      setUrlInput]     = useState('');
   const [sheetsUrl, setSheetsUrl]         = usePlanilhaUrl();
 
   async function handleExportar() {
@@ -443,31 +445,120 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
           </motion.button>
 
           {/* Planilha Online */}
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => sheetsUrl ? window.open(sheetsUrl, '_blank') : setPlanilhaModal(true)}
-            style={{
-              position: 'relative', overflow: 'hidden',
-              padding: '9px 16px',
-              background: sheetsUrl ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)',
-              border: `1px solid rgba(52,211,153,${sheetsUrl ? '0.4' : '0.25'})`,
-              borderRadius: 5, cursor: 'pointer',
-              color: '#34d399',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-              boxShadow: sheetsUrl ? '0 0 14px rgba(52,211,153,0.2)' : 'none',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.2)'}
-            onMouseLeave={e => e.currentTarget.style.background = sheetsUrl ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)'}
-            title={sheetsUrl ? 'Abrir Google Sheets' : 'Configurar planilha online'}
-          >
-            <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#34d399', borderRadius: '5px 5px 0 0', opacity: sheetsUrl ? 1 : 0.4 }} />
-            {isMobile
-              ? (sheetsUrl ? '🟢' : '📊')
-              : (sheetsUrl ? '🟢 PLANILHA ONLINE' : '📊 PLANILHA ONLINE')
-            }
-          </motion.button>
+          <div style={{ position: 'relative' }}>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                if (sheetsUrl) {
+                  window.open(sheetsUrl, '_blank');
+                } else {
+                  setUrlInput('');
+                  setShowUrlInput(v => !v);
+                }
+              }}
+              onContextMenu={e => {
+                e.preventDefault();
+                setUrlInput(sheetsUrl || '');
+                setShowUrlInput(v => !v);
+              }}
+              style={{
+                position: 'relative', overflow: 'hidden',
+                padding: '9px 16px',
+                background: sheetsUrl ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)',
+                border: `1px solid rgba(52,211,153,${sheetsUrl ? '0.4' : '0.25'})`,
+                borderRadius: 5, cursor: 'pointer',
+                color: '#34d399',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+                boxShadow: sheetsUrl ? '0 0 14px rgba(52,211,153,0.2)' : 'none',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.background = sheetsUrl ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.06)'}
+              title={sheetsUrl ? 'Abrir · clique direito para trocar link' : 'Colar link da planilha'}
+            >
+              <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: '#34d399', borderRadius: '5px 5px 0 0', opacity: sheetsUrl ? 1 : 0.4 }} />
+              {isMobile
+                ? (sheetsUrl ? '🟢' : '📊')
+                : (sheetsUrl ? '🟢 PLANILHA ONLINE' : '📊 PLANILHA ONLINE')
+              }
+            </motion.button>
+
+            {/* Mini dropdown para colar/trocar URL */}
+            <AnimatePresence>
+              {showUrlInput && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                  transition={{ duration: 0.15 }}
+                  style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                    zIndex: 200,
+                    background: '#13141a',
+                    border: '1px solid rgba(52,211,153,0.3)',
+                    borderRadius: 7,
+                    padding: '12px 14px',
+                    width: 320,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  }}
+                >
+                  <div style={{ fontSize: 9, color: 'rgba(52,211,153,0.7)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+                    🔗 Link do Google Sheets
+                  </div>
+                  <input
+                    autoFocus
+                    value={urlInput}
+                    onChange={e => setUrlInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const v = urlInput.trim();
+                        if (!v) { setSheetsUrl(''); setShowUrlInput(false); return; }
+                        if (!v.startsWith('https://docs.google.com/spreadsheets')) {
+                          alert('Cole um link válido do Google Sheets');
+                          return;
+                        }
+                        setSheetsUrl(v);
+                        setShowUrlInput(false);
+                        window.open(v, '_blank');
+                      }
+                      if (e.key === 'Escape') setShowUrlInput(false);
+                    }}
+                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      background: '#0d0e14',
+                      border: '1px solid rgba(52,211,153,0.3)',
+                      borderRadius: 5,
+                      color: 'rgba(255,255,255,0.85)',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 11, padding: '8px 10px', outline: 'none',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => setShowUrlInput(false)}
+                      style={{ padding: '5px 12px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700 }}
+                    >ESC</button>
+                    <button
+                      onClick={() => {
+                        const v = urlInput.trim();
+                        if (!v) { setSheetsUrl(''); setShowUrlInput(false); return; }
+                        if (!v.startsWith('https://docs.google.com/spreadsheets')) {
+                          alert('Cole um link válido do Google Sheets');
+                          return;
+                        }
+                        setSheetsUrl(v);
+                        setShowUrlInput(false);
+                        window.open(v, '_blank');
+                      }}
+                      style={{ padding: '5px 14px', background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.4)', borderRadius: 4, cursor: 'pointer', color: '#34d399', fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700 }}
+                    >SALVAR & ABRIR</button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Itinerário */}
           <motion.button
@@ -624,11 +715,6 @@ export default function VisaoGeralPage({ shows, loading, onEditar, onAtualizar }
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {planilhaModal && (
-          <PlanilhaOnlineModal onClose={() => setPlanilhaModal(false)} />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
