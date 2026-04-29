@@ -18,7 +18,7 @@ const VAZIO = {
   evento:'', status:'CONFIRMADO',
   horaInicio:'', horaTermino:'', duracao:'',
   cache:'', xdj:false, adiantamento:false, valorAdiantamento:'',
-  semCacheEquipe: false,
+  semCacheDaniel: false, semCacheYuri: false,
   contratante:'', endereco:'', rider:'', custos:'', observacoes:'',
 };
 
@@ -237,7 +237,8 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
         cache:             showParaEditar.cache            != null ? showParaEditar.cache : '',
         xdj:               showParaEditar.xdj              || false,
         adiantamento:      showParaEditar.adiantamento     || false,
-        semCacheEquipe:    showParaEditar.semCacheEquipe   || false,
+        semCacheDaniel:    showParaEditar.semCacheDaniel   || false,
+        semCacheYuri:      showParaEditar.semCacheYuri     || false,
         valorAdiantamento: showParaEditar.valorAdiantamento != null ? showParaEditar.valorAdiantamento : '',
         contratante:       showParaEditar.contratante      || '',
         endereco:          showParaEditar.endereco         || '',
@@ -572,12 +573,20 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
                 color="#1a6efa"
               />
             </div>
-            <ToggleCard
-              name="semCacheEquipe" checked={form.semCacheEquipe} onChange={handleChange}
-              label="SEM CACHÊ PARA EQUIPE"
-              sub="Daniel e Yuri não recebem neste show (collab, permuta, etc.)"
-              color="#ff453a"
-            />
+            <div style={grid2}>
+              <ToggleCard
+                name="semCacheDaniel" checked={form.semCacheDaniel} onChange={handleChange}
+                label="SEM CACHÊ · DANIEL"
+                sub="Daniel não recebe neste show"
+                color="#ff453a"
+              />
+              <ToggleCard
+                name="semCacheYuri" checked={form.semCacheYuri} onChange={handleChange}
+                label="SEM CACHÊ · YURI"
+                sub="Yuri não recebe neste show"
+                color="#ff453a"
+              />
+            </div>
             <AnimatePresence>
               {form.adiantamento && (
                 <motion.div
