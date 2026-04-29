@@ -10,7 +10,7 @@ const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
 const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
 
 function calcDaniel(show) {
-  if (show.semCacheEquipe) return 0;
+  if (show.semCacheDaniel) return 0;
   const d = new Date(show.data + 'T00:00:00');
   if (d < INICIO_EQUIPE) return 0;
   if (d < INICIO_PERCENTUAL_DANIEL) return 50;
@@ -19,7 +19,7 @@ function calcDaniel(show) {
   return (base > 0 ? base * p : 0) + 40;
 }
 function calcYuri(show) {
-  if (show.semCacheEquipe) return 0;
+  if (show.semCacheYuri) return 0;
   return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 300;
 }
 function fmtData(d) {

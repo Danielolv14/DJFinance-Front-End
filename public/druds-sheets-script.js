@@ -21,7 +21,7 @@ var D_20PCT  = new Date('2026-04-01T00:00:00');
 
 function calcDaniel(show) {
   if (!show || !show.data) return 0;
-  if (show.semCacheEquipe) return 0;
+  if (show.semCacheDaniel) return 0;
   var d = new Date(show.data + 'T00:00:00');
   if (isNaN(d.getTime())) return 0;
   if (d < D_EQUIPE) return 0;
@@ -33,7 +33,7 @@ function calcDaniel(show) {
 
 function calcYuri(show) {
   if (!show || !show.data) return 0;
-  if (show.semCacheEquipe) return 0;
+  if (show.semCacheYuri) return 0;
   var d = new Date(show.data + 'T00:00:00');
   if (isNaN(d.getTime())) return 0;
   return d < D_EQUIPE ? 0 : 300;
