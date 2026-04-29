@@ -31,7 +31,10 @@ export default function App() {
 
   const carregarShows = useCallback(async () => {
     setLoading(true);
-    try { setShows(await getShows()); }
+    try {
+      const raw = await getShows();
+      setShows(raw.filter(s => !s.data || parseInt(s.data.substring(0, 4), 10) >= 2025));
+    }
     catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, []);
