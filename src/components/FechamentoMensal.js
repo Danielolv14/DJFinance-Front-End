@@ -83,7 +83,7 @@ function ResultCard({ label, val, color, detail, large }) {
 
 const STATUS_COLOR = { CONFIRMADO: '#3dd457', PENDENTE: '#ffd60a', CANCELADO: '#ff453a' };
 
-export default function FechamentoMensal() {
+export default function FechamentoMensal({ mockFechamento }) {
   const isMobile = useIsMobile();
   const hoje = new Date();
   const [mes,        setMes]        = useState(hoje.getMonth()+1);
@@ -98,7 +98,11 @@ export default function FechamentoMensal() {
     setErro(''); setDados(null); setLoading(true);
     try {
       const aliquota = imposto ? parseFloat(imposto) : null;
-      setDados(await getFechamento(mes, ano, aliquota));
+      if (mockFechamento) {
+        setDados(mockFechamento(Number(mes), Number(ano), aliquota));
+      } else {
+        setDados(await getFechamento(mes, ano, aliquota));
+      }
     } catch (err) { setErro(err.message); }
     finally { setLoading(false); }
   }

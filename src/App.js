@@ -8,8 +8,11 @@ import PressKitPage    from './pages/PressKitPage';
 import FechamentoMensal from './components/FechamentoMensal';
 import ImportarCSV     from './components/ImportarCSV';
 import { getShows, getBloqueios } from './services/api';
+import { MOCK_SHOWS, getMockFechamento } from './mockData';
 import useIsMobile from './hooks/useIsMobile';
 import './App.css';
+
+const IS_DEMO = new URLSearchParams(window.location.search).has('demo');
 
 const ABAS = [
   { id:'dashboard',  label:'Dashboard',  color:'#4d8fff', shortcut:'F1' },
@@ -32,6 +35,7 @@ export default function App() {
   const carregarShows = useCallback(async () => {
     setLoading(true);
     try {
+      if (IS_DEMO) { setShows(MOCK_SHOWS); return; }
       const raw = await getShows();
       setShows(raw.filter(s => !s.data || parseInt(s.data.substring(0, 4), 10) >= 2025));
     }
@@ -40,6 +44,7 @@ export default function App() {
   }, []);
 
   const carregarBloqueios = useCallback(async () => {
+    if (IS_DEMO) return;
     try { setBloqueios(await getBloqueios()); }
     catch (err) { console.error(err); }
   }, []);
@@ -111,14 +116,24 @@ export default function App() {
           {/* ── Status cluster — hidden on mobile ── */}
           {!isMobile && (
             <div className="header-status-cluster">
-              <div className="status-item status-online">
-                <span className="status-led status-led--green" />
-                <span>ONLINE</span>
-              </div>
-              <div className="status-item">
-                <span className="status-led status-led--blue" />
-                <span>SYNC</span>
-              </div>
+              {IS_DEMO && (
+                <div className="status-item" style={{ background: 'rgba(255,214,10,0.12)', border: '1px solid rgba(255,214,10,0.35)', borderRadius: 4, padding: '4px 10px' }}>
+                  <span className="status-led status-led--orange status-led--blink" />
+                  <span style={{ color: '#ffd60a', fontWeight: 700, letterSpacing: '0.12em' }}>DEMO</span>
+                </div>
+              )}
+              {!IS_DEMO && (
+                <>
+                  <div className="status-item status-online">
+                    <span className="status-led status-led--green" />
+                    <span>ONLINE</span>
+                  </div>
+                  <div className="status-item">
+                    <span className="status-led status-led--blue" />
+                    <span>SYNC</span>
+                  </div>
+                </>
+              )}
               {loading && (
                 <div className="status-item">
                   <span className="status-led status-led--orange status-led--blink" />
@@ -153,7 +168,7 @@ export default function App() {
             />
           </>
         )}
-        {aba === 'fechamento' && <FechamentoMensal />}
+        {aba === 'fechamento' && <FechamentoMensal mockFechamento={IS_DEMO ? getMockFechamento : null} />}
         {aba === 'presskit'   && <PressKitPage />}
       </main>
     </div>
