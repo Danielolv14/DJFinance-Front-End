@@ -14,8 +14,9 @@ function calcDaniel(show) {
   const d = new Date(show.data + 'T00:00:00');
   if (d < INICIO_EQUIPE) return 0;
   if (d < INICIO_PERCENTUAL_DANIEL) return 50;
+  if (!(show.cache > 0)) return 110 + 40; // sem cachê definido → R$110 + transporte
   const p    = d < INICIO_PERCENTUAL_20 ? 0.10 : 0.20;
-  const base = (show.cache || 0) - (show.custos || 0);
+  const base = show.cache - (show.custos || 0);
   return (base > 0 ? base * p : 0) + 40;
 }
 function calcYuri(show) {
