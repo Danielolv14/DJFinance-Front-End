@@ -26,8 +26,9 @@ function calcDaniel(show) {
   if (isNaN(d.getTime())) return 0;
   if (d < D_EQUIPE) return 0;
   if (d < D_DANIEL) return 50;
+  if (!(show.cache > 0)) return 110 + 40; // sem cachê definido → R$110 + transporte
   var p    = d < D_20PCT ? 0.10 : 0.20;
-  var base = (show.cache || 0) - (show.custos || 0);
+  var base = show.cache - (show.custos || 0);
   return (base > 0 ? base * p : 0) + 40;
 }
 
