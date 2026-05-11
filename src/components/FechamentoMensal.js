@@ -316,11 +316,11 @@ export default function FechamentoMensal({ mockFechamento }) {
                         </div>
                         {/* XDJ */}
                         <div style={{ textAlign: 'center' }}>
-                          {s.xdj ? (
+                          {!s.xdj ? (
                             <span style={{
                               fontFamily: "'JetBrains Mono', monospace", fontSize: 8, fontWeight: 700,
-                              color: '#1a6efa', background: 'rgba(26,110,250,0.15)',
-                              border: '1px solid rgba(26,110,250,0.3)', borderRadius: 2, padding: '1px 5px',
+                              color: '#ff8040', background: 'rgba(255,128,64,0.15)',
+                              border: '1px solid rgba(255,128,64,0.4)', borderRadius: 2, padding: '1px 5px',
                             }}>XDJ</span>
                           ) : (
                             <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 10 }}>—</span>
