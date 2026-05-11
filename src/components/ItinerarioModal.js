@@ -38,7 +38,6 @@ function generateWPP(showsByDate, extras) {
     if (di > 0) lines.push('');
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     lines.push(`🎧 *ITINERÁRIO DRUDS — ${fmtDateBR(date)}*`);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
     shows.forEach((show, idx) => {
       const ex    = extras[show.id] || {};
