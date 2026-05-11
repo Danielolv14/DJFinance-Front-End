@@ -51,6 +51,7 @@ function generateWPP(showsByDate, extras) {
       lines.push(`*${num}. ${(show.evento || '').toUpperCase()}*`);
       lines.push(`📍 *Local:* ${show.endereco || '—'}`);
       lines.push(`⏱ *Início:* ${show.horaInicio || '—'}    ⏳ *Duração:* ${show.duracao || '—'}`);
+      lines.push(`🎛️ *Equipamento:* ${show.xdj ? '✅ XDJ incluso pelo contratante' : '⚠️ Levar equipamento'}`);
       lines.push(`🍾 *Rider:* ${rider}`);
       lines.push(`📞 *Contato:* ${(show.contratante || '—').toUpperCase()}`);
     });
