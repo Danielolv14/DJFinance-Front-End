@@ -568,9 +568,11 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
                 color="#3dd457"
               />
               <ToggleCard
-                name="xdj" checked={form.xdj} onChange={handleChange}
-                label="XDJ INCLUSO" sub="Equipamento fornecido pelo contratante"
-                color="#1a6efa"
+                name="xdj" checked={!form.xdj}
+                onChange={e => setForm(f => ({ ...f, xdj: !e.target.checked }))}
+                label="PRECISA LEVAR EQUIPAMENTO"
+                sub="O equipamento não é fornecido pelo contratante"
+                color="#ff8040"
               />
             </div>
             <div style={grid2}>
