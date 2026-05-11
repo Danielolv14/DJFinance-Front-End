@@ -562,6 +562,7 @@ export default function ItinerarioModal({ shows, onClose }) {
                             type="text"
                             value={riderVal}
                             onChange={e => setExtra(show.id, 'rider', e.target.value)}
+                            onClick={e => e.stopPropagation()}
                             placeholder="Combo de Gin"
                             style={{
                               width: '100%', background: '#0c0d12',
