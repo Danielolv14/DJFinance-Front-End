@@ -235,11 +235,11 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
             </span>
           )}
           <div style={{ display: 'flex', gap: 4 }}>
-            {!show.xdj && (
+            {show.xdj && (
               <span style={{
                 fontSize: 9, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
-                color: '#ff8040', background: 'rgba(255,128,64,0.15)',
-                border: '1px solid rgba(255,128,64,0.4)', borderRadius: 2, padding: '1px 5px',
+                color: '#1a6efa', background: 'rgba(26,110,250,0.15)',
+                border: '1px solid rgba(26,110,250,0.3)', borderRadius: 2, padding: '1px 5px',
                 letterSpacing: '0.1em',
               }}>XDJ</span>
             )}
