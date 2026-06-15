@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
+import { useDJ } from '../context/DJContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, DollarSign, Clock, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getProjecao } from '../services/api';
@@ -341,6 +342,7 @@ function DistRow({ label, value, total, color }) {
    MAIN DASHBOARD
    ════════════════════════════════════════════════════════════ */
 export default function DashboardPage({ shows }) {
+  const { djConfig } = useDJ();
   const hoje     = new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth() + 1;
@@ -452,7 +454,7 @@ export default function DashboardPage({ shows }) {
       >
         <div>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 28, fontWeight: 700, color: 'hsl(220 15% 88%)', lineHeight: 1 }}>
-            DRUDS <span style={{ color: 'hsl(217 90% 62%)', textShadow: '0 0 20px hsl(217 90% 55% / 0.4)' }}>FINANCEIRO</span>
+            {djConfig?.id || 'DRUDS'} <span style={{ color: 'hsl(217 90% 62%)', textShadow: '0 0 20px hsl(217 90% 55% / 0.4)' }}>FINANCEIRO</span>
           </div>
         </div>
 
