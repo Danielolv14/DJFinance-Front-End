@@ -5,10 +5,12 @@ import DashboardPage   from './pages/DashboardPage';
 import CalendarioPage  from './pages/CalendarioPage';
 import CRMPage         from './pages/CRMPage';
 import PressKitPage    from './pages/PressKitPage';
+import SelectDJPage    from './pages/SelectDJPage';
 import FechamentoMensal from './components/FechamentoMensal';
 import ImportarCSV     from './components/ImportarCSV';
 import { getShows, getBloqueios } from './services/api';
 import { MOCK_SHOWS, getMockFechamento } from './mockData';
+import { DJProvider, useDJ } from './context/DJContext';
 import useIsMobile from './hooks/useIsMobile';
 import './App.css';
 
@@ -25,13 +27,24 @@ const ABAS = [
 ];
 
 export default function App() {
+  return (
+    <DJProvider>
+      <AppInner />
+    </DJProvider>
+  );
+}
+
+function AppInner() {
   const isMobile = useIsMobile();
+  const { djAtivo, djConfig, logout } = useDJ();
+
   const [aba, setAba]                       = useState('dashboard');
   const [shows, setShows]                   = useState([]);
   const [bloqueios, setBloqueios]           = useState([]);
   const [showParaEditar, setShowParaEditar] = useState(null);
   const [loading, setLoading]               = useState(false);
 
+  // Recarregar dados quando o DJ muda
   const carregarShows = useCallback(async () => {
     setLoading(true);
     try {
@@ -49,7 +62,16 @@ export default function App() {
     catch (err) { console.error(err); }
   }, []);
 
-  useEffect(() => { carregarShows(); carregarBloqueios(); }, [carregarShows, carregarBloqueios]);
+  useEffect(() => {
+    if (!djAtivo) return;
+    setShows([]);
+    setBloqueios([]);
+    setAba('dashboard');
+    carregarShows();
+    carregarBloqueios();
+  }, [djAtivo, carregarShows, carregarBloqueios]);
+
+  if (!djAtivo && !IS_DEMO) return <SelectDJPage />;
 
   function handleEditar(show) {
     setShowParaEditar(show);
@@ -62,12 +84,15 @@ export default function App() {
     if (showParaEditar) setShowParaEditar(null);
   }
 
+  const nomeDisplay = IS_DEMO ? 'DJ DRUDS' : (djConfig?.nome?.toUpperCase() || 'DJ DRUDS');
+  const [nomeDJ, ...restoNome] = nomeDisplay.split(' ');
+
   return (
     <div className="app">
       <header className="header">
         <div className="header-inner">
 
-          {/* ── Logo XDJ ── */}
+          {/* ── Logo ── */}
           <div className="logo">
             <div className="logo-vinyl">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -89,12 +114,14 @@ export default function App() {
             </div>
             {!isMobile && (
               <div className="logo-text-block">
-                <div className="logo-product">DRUDS <span className="logo-accent">FINANCEIRO</span></div>
+                <div className="logo-product">
+                  {nomeDJ} <span className="logo-accent">{restoNome.join(' ')}</span>
+                </div>
               </div>
             )}
           </div>
 
-          {/* ── Hardware nav buttons ── */}
+          {/* ── Nav ── */}
           <nav className="nav">
             {ABAS.map(a => (
               <button
@@ -113,7 +140,7 @@ export default function App() {
             ))}
           </nav>
 
-          {/* ── Status cluster — hidden on mobile ── */}
+          {/* ── Status cluster ── */}
           {!isMobile && (
             <div className="header-status-cluster">
               {IS_DEMO && (
@@ -139,6 +166,23 @@ export default function App() {
                   <span className="status-led status-led--orange status-led--blink" />
                   <span>LOAD</span>
                 </div>
+              )}
+              {!IS_DEMO && (
+                <button
+                  onClick={logout}
+                  title="Trocar de painel"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 4, padding: '4px 10px',
+                    color: 'rgba(255,255,255,0.4)',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9, letterSpacing: '0.15em',
+                    cursor: 'pointer',
+                  }}
+                >
+                  TROCAR DJ
+                </button>
               )}
             </div>
           )}
