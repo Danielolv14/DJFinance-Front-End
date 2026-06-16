@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDJ } from '../context/DJContext';
 
 const BASE_URL = 'https://djfinance-back-end-production.up.railway.app';
 
 export default function ImportarCSV({ onImportado }) {
+  const { djConfig } = useDJ();
   const [loading,    setLoading]    = useState(false);
   const [resultado,  setResultado]  = useState(null);
   const [erro,       setErro]       = useState('');
@@ -30,7 +32,8 @@ export default function ImportarCSV({ onImportado }) {
     const formData = new FormData();
     formData.append('arquivo', arquivo);
     try {
-      const res = await fetch(`${BASE_URL}/shows/importar`, { method: 'POST', body: formData });
+      const dj = djConfig?.id || 'DRUDS';
+      const res = await fetch(`${BASE_URL}/shows/importar?dj=${dj}`, { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensagem || 'Erro ao importar');
       setResultado(data);
