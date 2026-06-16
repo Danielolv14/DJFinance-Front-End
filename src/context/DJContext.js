@@ -18,7 +18,10 @@ export const DJ_CONFIG = {
 };
 
 export function DJProvider({ children }) {
-  const [djAtivo, setDjAtivo] = useState(() => localStorage.getItem('djAtivo') || null);
+  const [djAtivo, setDjAtivo] = useState(() => {
+    const stored = localStorage.getItem('djAtivo');
+    return stored && DJ_CONFIG[stored] ? stored : null;
+  });
 
   const login = (djId) => {
     localStorage.setItem('djAtivo', djId);

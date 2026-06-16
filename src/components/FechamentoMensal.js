@@ -236,10 +236,13 @@ export default function FechamentoMensal({ mockFechamento }) {
             {/* KPI cards */}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
               <ResultCard label="TOTAL BRUTO"   val={moeda(dados.totalBruto)}    color="#9a7ef8" large />
-              <ResultCard label="DANIEL"        val={moeda(dados.totalDaniel)}   color="#1a6efa" detail="% + R$40 transporte" />
+              <ResultCard label="DANIEL"        val={moeda(dados.totalDaniel)}   color="#1a6efa" detail={isBraichi ? '10% do cachê bruto' : '% + R$40 transporte'} />
               {!isBraichi && <ResultCard label="YURI" val={moeda(dados.totalYuri)} color="#3dd457" detail="R$300 fixo por show" />}
               {dados.totalCustos > 0 && (
                 <ResultCard label="OUTROS CUSTOS" val={moeda(dados.totalCustos)} color="#ffd60a" />
+              )}
+              {isBraichi && dados.totalProdutor > 0 && (
+                <ResultCard label="PRODUTOR" val={moeda(dados.totalProdutor)} color="#b06aff" detail="Cachê do produtor externo" />
               )}
               {dados.totalImpostos > 0 && (
                 <ResultCard label={`IMPOSTOS (${imposto}%)`} val={moeda(dados.totalImpostos)} color="#ff8040" detail="Deduzido do lucro" />

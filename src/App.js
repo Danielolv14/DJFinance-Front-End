@@ -66,6 +66,7 @@ function AppInner() {
     if (!djAtivo) return;
     setShows([]);
     setBloqueios([]);
+    setShowParaEditar(null);
     setAba('dashboard');
     carregarShows();
     carregarBloqueios();

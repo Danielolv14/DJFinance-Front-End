@@ -85,7 +85,7 @@ export async function deleteBloqueio(id) {
 }
 
 export async function normalizarLocal(de, para) {
-  const res = await fetch(`${BASE_URL}/shows/normalizar-local`, {
+  const res = await fetch(`${BASE_URL}/shows/normalizar-local?dj=${getDJ()}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ de, para }),
@@ -95,7 +95,7 @@ export async function normalizarLocal(de, para) {
 }
 
 export async function normalizarContratante(de, para) {
-  const res = await fetch(`${BASE_URL}/shows/normalizar-contratante`, {
+  const res = await fetch(`${BASE_URL}/shows/normalizar-contratante?dj=${getDJ()}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ de, para }),
