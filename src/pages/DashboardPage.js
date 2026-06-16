@@ -343,6 +343,7 @@ function DistRow({ label, value, total, color }) {
    ════════════════════════════════════════════════════════════ */
 export default function DashboardPage({ shows }) {
   const { djConfig } = useDJ();
+  const isBraichi = djConfig?.id === 'BRAICHI';
   const hoje     = new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth() + 1;
@@ -359,7 +360,7 @@ export default function DashboardPage({ shows }) {
   const totalBruto   = confirmados.reduce((a,s) => a + (s.cache   || 0), 0);
   const totalCustos  = confirmados.reduce((a,s) => a + (s.custos  || 0), 0);
   const totalDaniel  = confirmados.reduce((a,s) => a + calcDaniel(s),    0);
-  const totalYuri    = confirmados.reduce((a,s) => a + calcYuri(s),      0);
+  const totalYuri    = isBraichi ? 0 : confirmados.reduce((a,s) => a + calcYuri(s), 0);
   const lucroLiquido = totalBruto - totalDaniel - totalYuri - totalCustos;
   const aReceber     = pendentes.reduce((a,s) => a + (s.cache || 0), 0);
 
@@ -369,7 +370,7 @@ export default function DashboardPage({ shows }) {
     confirmados.forEach(s => {
       if (!s.mes) return;
       cm[s.mes - 1] += (s.cache || 0);
-      lm[s.mes - 1] += Math.max((s.cache||0) - calcDaniel(s) - calcYuri(s) - (s.custos||0), 0);
+      lm[s.mes - 1] += Math.max((s.cache||0) - calcDaniel(s) - (isBraichi ? 0 : calcYuri(s)) - (s.custos||0), 0);
     });
     return MESES_LABEL.map((label, i) => ({ label, valor: Math.round(cm[i]), lucro: Math.round(lm[i]) }));
   }, [confirmados]);
@@ -381,7 +382,7 @@ export default function DashboardPage({ shows }) {
   const mesBruto   = showsMes.reduce((a,s) => a + (s.cache  || 0), 0);
   const mesCustos  = showsMes.reduce((a,s) => a + (s.custos || 0), 0);
   const mesDaniel  = showsMes.reduce((a,s) => a + calcDaniel(s), 0);
-  const mesYuri    = showsMes.reduce((a,s) => a + calcYuri(s), 0);
+  const mesYuri    = isBraichi ? 0 : showsMes.reduce((a,s) => a + calcYuri(s), 0);
   const mesLucro   = mesBruto - mesDaniel - mesYuri - mesCustos;
   const mesShows   = showsMes.length;
   const mesMedia   = mesShows > 0 ? mesBruto / mesShows : 0;
@@ -692,7 +693,7 @@ export default function DashboardPage({ shows }) {
           <div className="space-y-4">
             <DistRow label="Lucro DJ"          value={Math.max(lucroLiquido,0)} total={totalBruto} color="hsl(217 90% 55%)" />
             <DistRow label={`Daniel (${new Date() >= INICIO_PERCENTUAL_20 ? '20' : '10'}%)`} value={totalDaniel} total={totalBruto} color="hsl(30 95% 55%)" />
-            <DistRow label="Yuri (R$300/set)"   value={totalYuri}   total={totalBruto} color="hsl(150 70% 45%)" />
+            {!isBraichi && <DistRow label="Yuri (R$300/set)" value={totalYuri} total={totalBruto} color="hsl(150 70% 45%)" />}
             <DistRow label="Custos Op."          value={totalCustos} total={totalBruto} color="hsl(0 75% 55%)" />
           </div>
         </Card>
