@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createShow, updateShow } from '../services/api';
 import useIsMobile from '../hooks/useIsMobile';
+import { useDJ } from '../context/DJContext';
 
 /* ─── constants ─── */
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -19,6 +20,7 @@ const VAZIO = {
   horaInicio:'', horaTermino:'', duracao:'',
   cache:'', xdj:false, adiantamento:false, valorAdiantamento:'',
   semCacheDaniel: false, semCacheYuri: false,
+  temProdutor: false, valorProdutor: '',
   contratante:'', endereco:'', rider:'', custos:'', observacoes:'',
 };
 
@@ -213,6 +215,8 @@ function ToggleCard({ name, checked, onChange, label, sub, color = ACCENT }) {
 /* ═══════════════ PAGE ═══════════════ */
 export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao, bloqueios = [], shows = [] }) {
   const isMobile = useIsMobile();
+  const { djConfig } = useDJ();
+  const isBraichi = djConfig?.id === 'BRAICHI';
   const editando = !!showParaEditar;
   const [form, setForm]               = useState(VAZIO);
   const [erros, setErros]             = useState({});
@@ -239,6 +243,8 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
         adiantamento:      showParaEditar.adiantamento     || false,
         semCacheDaniel:    showParaEditar.semCacheDaniel   || false,
         semCacheYuri:      showParaEditar.semCacheYuri     || false,
+        temProdutor:       showParaEditar.temProdutor      || false,
+        valorProdutor:     showParaEditar.valorProdutor    != null ? showParaEditar.valorProdutor : '',
         valorAdiantamento: showParaEditar.valorAdiantamento != null ? showParaEditar.valorAdiantamento : '',
         contratante:       showParaEditar.contratante      || '',
         endereco:          showParaEditar.endereco         || '',
@@ -324,6 +330,7 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
         cache:             form.cache             !== '' ? Number(form.cache)             : null,
         valorAdiantamento: form.valorAdiantamento !== '' ? Number(form.valorAdiantamento) : null,
         custos:            form.custos            !== '' ? Number(form.custos)            : null,
+        valorProdutor:     form.valorProdutor     !== '' ? Number(form.valorProdutor)     : null,
         horaInicio:        form.horaInicio        || null,
         horaTermino:       form.horaTermino       || null,
         duracao:           form.duracao           || null,
@@ -582,13 +589,37 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
                 sub="Daniel não recebe neste show"
                 color="#ff453a"
               />
-              <ToggleCard
-                name="semCacheYuri" checked={form.semCacheYuri} onChange={handleChange}
-                label="SEM CACHÊ · YURI"
-                sub="Yuri não recebe neste show"
-                color="#ff453a"
-              />
+              {isBraichi ? (
+                <ToggleCard
+                  name="temProdutor" checked={form.temProdutor} onChange={handleChange}
+                  label="TEVE PRODUTOR"
+                  sub="Houve produtor externo neste show"
+                  color="#b06aff"
+                />
+              ) : (
+                <ToggleCard
+                  name="semCacheYuri" checked={form.semCacheYuri} onChange={handleChange}
+                  label="SEM CACHÊ · YURI"
+                  sub="Yuri não recebe neste show"
+                  color="#ff453a"
+                />
+              )}
             </div>
+            <AnimatePresence>
+              {isBraichi && form.temProdutor && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <Field label="Cachê do Produtor (R$)">
+                    <HwInput type="number" name="valorProdutor" value={form.valorProdutor}
+                      onChange={handleChange} placeholder="Ex: 500.00" min="0" step="0.01" />
+                  </Field>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <AnimatePresence>
               {form.adiantamento && (
                 <motion.div
