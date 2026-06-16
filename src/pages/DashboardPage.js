@@ -32,10 +32,14 @@ function calcDaniel(show) {
   const d = new Date(show.data + 'T00:00:00');
   if (d < INICIO_EQUIPE) return 0;
   if (d < INICIO_PERCENTUAL_DANIEL) return 50;
-  if (!(show.cache > 0)) return 110 + 40; // sem cachê definido → R$110 + transporte
+  if (!(show.cache > 0)) return 110 + 40;
   const p = d < INICIO_PERCENTUAL_20 ? 0.10 : 0.20;
   const base = show.cache - (show.custos || 0);
   return (base > 0 ? base * p : 0) + 40;
+}
+function calcDanielBraichi(show) {
+  if (show.semCacheDaniel) return 0;
+  return (show.cache > 0) ? show.cache * 0.10 : 0;
 }
 function calcYuri(show) {
   if (show.semCacheYuri) return 0;
@@ -344,6 +348,7 @@ function DistRow({ label, value, total, color }) {
 export default function DashboardPage({ shows }) {
   const { djConfig } = useDJ();
   const isBraichi = djConfig?.id === 'BRAICHI';
+  const calcD = s => isBraichi ? calcDanielBraichi(s) : calcDaniel(s);
   const hoje     = new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth() + 1;
@@ -359,7 +364,7 @@ export default function DashboardPage({ shows }) {
   /* KPIs anuais */
   const totalBruto   = confirmados.reduce((a,s) => a + (s.cache   || 0), 0);
   const totalCustos  = confirmados.reduce((a,s) => a + (s.custos  || 0), 0);
-  const totalDaniel  = confirmados.reduce((a,s) => a + calcDaniel(s),    0);
+  const totalDaniel  = confirmados.reduce((a,s) => a + calcD(s),          0);
   const totalYuri    = isBraichi ? 0 : confirmados.reduce((a,s) => a + calcYuri(s), 0);
   const lucroLiquido = totalBruto - totalDaniel - totalYuri - totalCustos;
   const aReceber     = pendentes.reduce((a,s) => a + (s.cache || 0), 0);
@@ -370,10 +375,10 @@ export default function DashboardPage({ shows }) {
     confirmados.forEach(s => {
       if (!s.mes) return;
       cm[s.mes - 1] += (s.cache || 0);
-      lm[s.mes - 1] += Math.max((s.cache||0) - calcDaniel(s) - (isBraichi ? 0 : calcYuri(s)) - (s.custos||0), 0);
+      lm[s.mes - 1] += Math.max((s.cache||0) - calcD(s) - (isBraichi ? 0 : calcYuri(s)) - (s.custos||0), 0);
     });
     return MESES_LABEL.map((label, i) => ({ label, valor: Math.round(cm[i]), lucro: Math.round(lm[i]) }));
-  }, [confirmados]);
+  }, [confirmados, isBraichi]);
 
   /* Dados do mês selecionado */
   const showsMes = useMemo(() =>
@@ -381,7 +386,7 @@ export default function DashboardPage({ shows }) {
 
   const mesBruto   = showsMes.reduce((a,s) => a + (s.cache  || 0), 0);
   const mesCustos  = showsMes.reduce((a,s) => a + (s.custos || 0), 0);
-  const mesDaniel  = showsMes.reduce((a,s) => a + calcDaniel(s), 0);
+  const mesDaniel  = showsMes.reduce((a,s) => a + calcD(s),      0);
   const mesYuri    = isBraichi ? 0 : showsMes.reduce((a,s) => a + calcYuri(s), 0);
   const mesLucro   = mesBruto - mesDaniel - mesYuri - mesCustos;
   const mesShows   = showsMes.length;

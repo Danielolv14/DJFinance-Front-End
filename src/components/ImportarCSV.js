@@ -17,7 +17,8 @@ export default function ImportarCSV({ onImportado }) {
     if (!window.confirm('Remover todos os shows duplicados? Será mantido apenas o primeiro registro de cada show.')) return;
     setLimpando(true); setMsgLimpeza('');
     try {
-      const res = await fetch(`${BASE_URL}/shows/duplicados`, { method: 'DELETE' });
+      const dj = djConfig?.id || 'DRUDS';
+      const res = await fetch(`${BASE_URL}/shows/duplicados?dj=${dj}`, { method: 'DELETE' });
       const data = await res.json();
       setMsgLimpeza(data.mensagem);
       onImportado();
