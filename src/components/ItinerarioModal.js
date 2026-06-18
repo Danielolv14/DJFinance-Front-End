@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDJ } from '../context/DJContext';
 
 /* ──────────────────── helpers ──────────────────── */
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -29,7 +30,7 @@ function nowStamp() {
 }
 
 /* ──────────────────── WPP text ──────────────────── */
-function generateWPP(showsByDate, extras) {
+function generateWPP(showsByDate, extras, djNome) {
   const dates = Object.keys(showsByDate).sort();
   const lines = [];
 
@@ -37,7 +38,7 @@ function generateWPP(showsByDate, extras) {
     const shows = showsByDate[date];
     if (di > 0) lines.push('');
     lines.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`🎧 *ITINERÁRIO DRUDS — ${fmtDateBR(date)}*`);
+    lines.push(`🎧 *ITINERÁRIO ${djNome.toUpperCase()} — ${fmtDateBR(date)}*`);
 
     shows.forEach((show, idx) => {
       const ex    = extras[show.id] || {};
@@ -50,7 +51,7 @@ function generateWPP(showsByDate, extras) {
       lines.push(`*${num}. ${(show.evento || '').toUpperCase()}*`);
       lines.push(`📍 *Local:* ${show.endereco || '—'}`);
       lines.push(`⏱ *Início:* ${show.horaInicio || '—'}    ⏳ *Duração:* ${show.duracao || '—'}`);
-      if (!show.xdj) lines.push(`🎛️ *Equipamento:* ⚠️ Precisa levar XDJ`);
+      if (show.xdj) lines.push(`🎛️ *Equipamento:* ⚠️ Precisa levar XDJ`);
       lines.push(`🍾 *Rider:* ${rider}`);
       lines.push(`📞 *Contato:* ${(show.contratante || '—').toUpperCase()}`);
     });
@@ -62,7 +63,7 @@ function generateWPP(showsByDate, extras) {
 }
 
 /* ──────────────────── PDF HTML ──────────────────── */
-function buildPDFHtml(showsByDate, extras) {
+function buildPDFHtml(showsByDate, extras, djNome) {
   const dates = Object.keys(showsByDate).sort();
   const totalShows = Object.values(showsByDate).reduce((a,b) => a + b.length, 0);
   const accentColors = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6'];
@@ -275,8 +276,8 @@ function buildPDFHtml(showsByDate, extras) {
 
 <div class="doc-header">
   <div>
-    <div class="doc-brand">Agência DRUDS · Itinerário Oficial</div>
-    <div class="doc-title">ITINERÁRIO <span>DRUDS</span></div>
+    <div class="doc-brand">Agência ${djNome.toUpperCase()} · Itinerário Oficial</div>
+    <div class="doc-title">ITINERÁRIO <span>${djNome.toUpperCase()}</span></div>
     <div class="doc-subtitle">Gerado em ${nowStamp()}</div>
   </div>
   <div class="doc-meta">
@@ -288,7 +289,7 @@ function buildPDFHtml(showsByDate, extras) {
 ${bodyHtml}
 
 <div class="doc-footer">
-  <span><span class="footer-brand">DRUDS</span> · Itinerário Oficial</span>
+  <span><span class="footer-brand">${djNome.toUpperCase()}</span> · Itinerário Oficial</span>
   <span>Gerado em ${nowStamp()}</span>
 </div>
 
@@ -296,8 +297,8 @@ ${bodyHtml}
 </html>`;
 }
 
-function openPDF(showsByDate, extras) {
-  const html = buildPDFHtml(showsByDate, extras);
+function openPDF(showsByDate, extras, djNome) {
+  const html = buildPDFHtml(showsByDate, extras, djNome);
   const win  = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
@@ -345,6 +346,8 @@ function Toggle({ checked, onChange, label }) {
    MODAL
    ════════════════════════════════════════════════════════════ */
 export default function ItinerarioModal({ shows, onClose }) {
+  const { djConfig } = useDJ();
+  const djNome = djConfig?.nome || 'DRUDS';
   const hoje = new Date().toISOString().split('T')[0];
   const [dataInicio, setDataInicio] = useState(hoje);
   const [dataFim,    setDataFim]    = useState(hoje);
@@ -372,7 +375,7 @@ export default function ItinerarioModal({ shows, onClose }) {
 
   const totalDates = Object.keys(showsByDate).length;
   const totalShows = Object.values(showsByDate).reduce((a, b) => a + b.length, 0);
-  const wppText    = useMemo(() => generateWPP(showsByDate, extras), [showsByDate, extras]);
+  const wppText    = useMemo(() => generateWPP(showsByDate, extras, djNome), [showsByDate, extras, djNome]);
 
   function copyWPP() {
     navigator.clipboard.writeText(wppText).then(() => {
@@ -426,7 +429,7 @@ export default function ItinerarioModal({ shows, onClose }) {
                 📋 GERADOR DE ITINERÁRIO
               </div>
               <div style={{ fontSize: 21, fontWeight: 800, color: 'rgba(255,255,255,0.93)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '-0.3px' }}>
-                Itinerário <span style={{ color: ACCENT, textShadow: `0 0 16px ${ACCENT}60` }}>DRUDS</span>
+                Itinerário <span style={{ color: ACCENT, textShadow: `0 0 16px ${ACCENT}60` }}>{djNome.toUpperCase()}</span>
               </div>
             </div>
             <button onClick={onClose} style={{
@@ -595,7 +598,7 @@ export default function ItinerarioModal({ shows, onClose }) {
               <div style={{ background: '#1f2c34', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#2a3942', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🎧</div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e9edef' }}>Druds DJ</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e9edef' }}>{djNome}</div>
                   <div style={{ fontSize: 11, color: '#8696a0' }}>online</div>
                 </div>
               </div>
@@ -673,7 +676,7 @@ export default function ItinerarioModal({ shows, onClose }) {
 
               <motion.button
                 whileTap={{ scale: 0.96 }}
-                onClick={() => openPDF(showsByDate, extras)}
+                onClick={() => openPDF(showsByDate, extras, djNome)}
                 style={{
                   position: 'relative', overflow: 'hidden',
                   padding: '10px 24px',
