@@ -28,7 +28,7 @@ function calcDanielLocal(show) {
   const d = new Date(show.data + 'T00:00:00');
   if (d < INICIO_EQUIPE_L) return 0;
   if (d < INICIO_PERC_10_L) return 50;
-  if (!(show.cache > 0)) return 110 + 40;
+  if (!(show.cache > 0)) return 70 + 40;
   const p = d < INICIO_PERC_20_L ? 0.10 : 0.20;
   const base = show.cache - (show.custos || 0);
   return (base > 0 ? base * p : 0) + 40;
@@ -57,7 +57,7 @@ function extrairCidade(endereco) {
 /* ═══════════════════════════════════════════════════════════════
    MAIN EXPORT
    ═══════════════════════════════════════════════════════════════ */
-export async function gerarPDFFechamento(dados) {
+export async function gerarPDFFechamento(dados, djConfig) {
   const doc     = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
   const W       = 210;
   const H       = 297;
@@ -65,6 +65,10 @@ export async function gerarPDFFechamento(dados) {
   const INNER   = W - MARGIN * 2;
   const nomeMes = MESES[(dados.mes || 1) - 1];
   const shows   = dados.shows || [];
+  const djId    = (djConfig?.id   || 'DRUDS');
+  const djNome  = (djConfig?.nome || 'DJ Druds');
+  const djBrand = djId.charAt(0) + djId.slice(1).toLowerCase(); // Druds / Braichi
+  const isBraichi = djId === 'BRAICHI';
 
   /* ── Palette ── */
   const BG     = [13,  14,  22];
@@ -118,13 +122,13 @@ export async function gerarPDFFechamento(dados) {
 
     // Left: brand
     doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...FG);
-    doc.text('DRUDS', MARGIN, 16);
+    doc.text(djId, MARGIN, 16);
     doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...FG2);
     doc.text(subtitle, MARGIN, 23);
     doc.setFillColor(...BLUE);
     doc.roundedRect(MARGIN, 27.5, 52, 7.5, 2, 2, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
-    doc.text('DRUDS FINANCEIRO', MARGIN+26, 32.8, { align:'center' });
+    doc.text(`${djId} FINANCEIRO`, MARGIN+26, 32.8, { align:'center' });
 
     // Right: month/year
     doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...FG);
@@ -174,9 +178,10 @@ export async function gerarPDFFechamento(dados) {
     doc.setFillColor(...BG2); doc.rect(0, pH-13, W, 13, 'F');
     doc.setFillColor(...BLUE); doc.rect(0, pH-13, W, 0.5, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...BLUE);
-    doc.text('DRUDS', MARGIN, pH-7);
+    doc.text(djId, MARGIN, pH-7);
+    const brandW = doc.getTextWidth(djId);
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...FG3);
-    doc.text('Druds Financeiro', MARGIN+14, pH-7);
+    doc.text(`${djBrand} Financeiro`, MARGIN+brandW+3, pH-7);
     doc.text(`Página ${pg} de ${total}  ·  ${nomeMes} / ${dados.ano}  ·  ${label}`, W-MARGIN, pH-7, { align:'right' });
   }
 
@@ -229,7 +234,7 @@ export async function gerarPDFFechamento(dados) {
 
   /* ── Narrativa ── */
   const cidadesMencao = cidadesRank.slice(0,3).map(([c])=>c).join(', ') || 'diferentes locais';
-  const narrativa = `Em ${nomeMes.toLowerCase()}, Druds DJ manteve uma agenda com ${dados.quantidadeShows} show${dados.quantidadeShows!==1?'s':''} e ${formatTotalHoras(totalHoras)} de set, passando por ${cidadesMencao}.`;
+  const narrativa = `Em ${nomeMes.toLowerCase()}, ${djNome} manteve uma agenda com ${dados.quantidadeShows} show${dados.quantidadeShows!==1?'s':''} e ${formatTotalHoras(totalHoras)} de set, passando por ${cidadesMencao}.`;
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...FG2);
   const narLines = doc.splitTextToSize(narrativa, INNER);
   doc.text(narLines, MARGIN, y);
@@ -339,8 +344,13 @@ export async function gerarPDFFechamento(dados) {
       sub:`${dados.totalBruto>0 ? Math.round((dados.lucroLiquido/dados.totalBruto)*100) : 0}% do bruto` },
     { label:'DANIEL',        value: moeda(dados.totalDaniel),  color: ORANGE,
       sub:`${dados.totalBruto>0 ? Math.round((dados.totalDaniel/dados.totalBruto)*100) : 0}% do bruto` },
-    { label:'YURI',          value: moeda(dados.totalYuri),    color: PURPLE,
-      sub:'R$300/show' },
+    ...(isBraichi
+      ? (dados.totalProdutor > 0
+          ? [{ label:'PRODUTOR', value: moeda(dados.totalProdutor), color: PURPLE,
+               sub:'cachê do produtor' }]
+          : [])
+      : [{ label:'YURI', value: moeda(dados.totalYuri), color: PURPLE,
+           sub:'R$300/show' }]),
     ...(dados.totalCustos > 0
       ? [{ label:'CUSTOS', value: moeda(dados.totalCustos), color: RED,
            sub:`${dados.totalBruto>0 ? Math.round((dados.totalCustos/dados.totalBruto)*100) : 0}% do bruto` }]
@@ -472,5 +482,5 @@ export async function gerarPDFFechamento(dados) {
     footer(pg, pageCount, pageLabels[pg-1]);
   }
 
-  doc.save(`retrospectiva-${nomeMes.toLowerCase()}-${dados.ano}.pdf`);
+  doc.save(`retrospectiva-${djId.toLowerCase()}-${nomeMes.toLowerCase()}-${dados.ano}.pdf`);
 }

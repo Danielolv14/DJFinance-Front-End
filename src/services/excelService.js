@@ -14,10 +14,14 @@ function calcDaniel(show) {
   const d = new Date(show.data + 'T00:00:00');
   if (d < INICIO_EQUIPE) return 0;
   if (d < INICIO_PERCENTUAL_DANIEL) return 50;
-  if (!(show.cache > 0)) return 110 + 40; // sem cachê definido → R$110 + transporte
+  if (!(show.cache > 0)) return 70 + 40; // sem cachê definido → R$70 + transporte
   const p    = d < INICIO_PERCENTUAL_20 ? 0.10 : 0.20;
   const base = show.cache - (show.custos || 0);
   return (base > 0 ? base * p : 0) + 40;
+}
+function calcDanielBraichi(show) {
+  if (show.semCacheDaniel) return 0;
+  return (show.cache > 0) ? show.cache * 0.10 : 0;
 }
 function calcYuri(show) {
   if (show.semCacheYuri) return 0;
@@ -27,6 +31,8 @@ function fmtData(d) {
   if (!d) return '—';
   return d.split('-').reverse().join('/');
 }
+const colNum    = (cols, key) => cols.findIndex(c => c.key === key) + 1; // 1-based; 0 se ausente
+const colLetter = n => String.fromCharCode(64 + n);                      // 1→A, 2→B, …
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -85,12 +91,18 @@ function totalsStyle(cell) {
 /* ═══════════════════════════════════════════════════════════════
    MAIN EXPORT FUNCTION
    ═══════════════════════════════════════════════════════════════ */
-export async function exportarShows(shows) {
+export async function exportarShows(shows, djConfig) {
   // Dynamic import — ExcelJS só é carregado quando o botão é clicado
   const ExcelJS = (await import('exceljs')).default;
 
+  const djId    = (djConfig?.id || 'DRUDS');
+  const djBrand = djId.charAt(0) + djId.slice(1).toLowerCase(); // Druds / Braichi
+  const isBraichi = djId === 'BRAICHI';
+  const calcD   = isBraichi ? calcDanielBraichi : calcDaniel;
+  const calcY   = isBraichi ? () => 0 : calcYuri;
+
   const wb      = new ExcelJS.Workbook();
-  wb.creator    = 'Druds Financeiro';
+  wb.creator    = `${djBrand} Financeiro`;
   wb.created    = new Date();
   wb.modified   = new Date();
 
@@ -121,7 +133,7 @@ export async function exportarShows(shows) {
     { key:'custos', header:'Custos (R$)',      width:15 },
     { key:'lucro',  header:'Lucro DJ (R$)',    width:15 },
     { key:'daniel', header:'Daniel (R$)',      width:14 },
-    { key:'yuri',   header:'Yuri (R$)',        width:14 },
+    ...(isBraichi ? [] : [{ key:'yuri', header:'Yuri (R$)', width:14 }]),
     { key:'xdj',    header:'XDJ',             width:7  },
     { key:'adiant', header:'Adiant.',          width:9  },
     { key:'vadiant',header:'Vl.Adiant. (R$)', width:16 },
@@ -130,7 +142,7 @@ export async function exportarShows(shows) {
   ];
   ws1.columns = cols1.map(c => ({ key:c.key, width:c.width }));
 
-  titleRow(ws1, `DRUDS FINANCEIRO — Todos os Shows — ${dataStr} ${horaStr}`, cols1.length);
+  titleRow(ws1, `${djId} FINANCEIRO — Todos os Shows — ${dataStr} ${horaStr}`, cols1.length);
 
   const hdrRow1 = ws1.getRow(2);
   hdrRow1.height = 22;
@@ -140,8 +152,8 @@ export async function exportarShows(shows) {
   const sorted = [...shows].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 
   sorted.forEach((show, idx) => {
-    const daniel = calcDaniel(show);
-    const yuri   = calcYuri(show);
+    const daniel = calcD(show);
+    const yuri   = calcY(show);
     const lucro  = (show.cache || 0) - daniel - yuri - (show.custos || 0);
     const isEven = idx % 2 === 0;
     const bg     = { argb: isEven ? C.WHITE : C.GREY_L };
@@ -163,7 +175,7 @@ export async function exportarShows(shows) {
       show.custos      || 0,
       lucro,
       daniel,
-      yuri,
+      ...(isBraichi ? [] : [yuri]),
       show.xdj         ? 'Sim' : 'Não',
       show.adiantamento? 'Sim' : 'Não',
       show.valorAdiantamento || 0,
@@ -181,7 +193,7 @@ export async function exportarShows(shows) {
     });
 
     /* Status colorido */
-    const sCell  = row.getCell(6);
+    const sCell  = row.getCell(colNum(cols1, 'status'));
     const sCmap  = { CONFIRMADO:C.GREEN, PENDENTE:C.YELLOW, CANCELADO:C.RED };
     const sBgmap = { CONFIRMADO:C.GREEN_L, PENDENTE:C.YELLOW_L, CANCELADO:C.RED_L };
     sCell.font = { name:'Arial', size:9.5, bold:true, color:{ argb:sCmap[show.status] || 'FF666666' } };
@@ -189,17 +201,21 @@ export async function exportarShows(shows) {
     sCell.alignment = { horizontal:'center', vertical:'middle' };
 
     /* Células financeiras */
-    [10, 11, 13, 14, 17].forEach(ci => setCurrency(row.getCell(ci)));
+    ['cache','custos','daniel','yuri','vadiant']
+      .map(k => colNum(cols1, k)).filter(Boolean)
+      .forEach(ci => setCurrency(row.getCell(ci)));
 
     /* Lucro colorido */
-    const lCell = row.getCell(12);
+    const lCell = row.getCell(colNum(cols1, 'lucro'));
     setCurrency(lCell);
     lCell.font = { name:'Arial', size:9.5, bold:true, color:{ argb:lucro >= 0 ? C.GREEN : C.RED } };
 
     /* Centralizar */
-    [1, 7, 8, 9, 15, 16].forEach(ci => {
-      row.getCell(ci).alignment = { horizontal:'center', vertical:'middle' };
-    });
+    ['num','inicio','term','dur','xdj','adiant']
+      .map(k => colNum(cols1, k)).filter(Boolean)
+      .forEach(ci => {
+        row.getCell(ci).alignment = { horizontal:'center', vertical:'middle' };
+      });
   });
 
   /* Linha de totais */
@@ -208,18 +224,16 @@ export async function exportarShows(shows) {
     const tot = ws1.getRow(nRows + 3);
     tot.height = 24;
 
-    const totVals = [
-      '', 'TOTAL', `${nRows} shows`, '', '', '',
-      '', '', '',
-      { formula:`SUM(J3:J${nRows + 2})` },
-      { formula:`SUM(K3:K${nRows + 2})` },
-      { formula:`SUM(L3:L${nRows + 2})` },
-      { formula:`SUM(M3:M${nRows + 2})` },
-      { formula:`SUM(N3:N${nRows + 2})` },
-      '', '',
-      { formula:`SUM(Q3:Q${nRows + 2})` },
-      '', '',
-    ];
+    const sum1 = key => {
+      const L = colLetter(colNum(cols1, key));
+      return { formula:`SUM(${L}3:${L}${nRows + 2})` };
+    };
+    const totVals = cols1.map(c => {
+      if (c.key === 'data')   return 'TOTAL';
+      if (c.key === 'evento') return `${nRows} shows`;
+      if (['cache','custos','lucro','daniel','yuri','vadiant'].includes(c.key)) return sum1(c.key);
+      return '';
+    });
 
     totVals.forEach((val, ci) => {
       const cell = tot.getCell(ci + 1);
@@ -227,16 +241,18 @@ export async function exportarShows(shows) {
       totalsStyle(cell);
     });
 
-    [10, 11, 12, 13, 14, 17].forEach(ci => {
-      const c = tot.getCell(ci);
-      c.numFmt    = 'R$ #,##0.00;(R$ #,##0.00)';
-      c.alignment = { horizontal:'right', vertical:'middle' };
-    });
-    tot.getCell(2).alignment = { horizontal:'center', vertical:'middle' };
-    tot.getCell(3).alignment = { horizontal:'center', vertical:'middle' };
+    ['cache','custos','lucro','daniel','yuri','vadiant']
+      .map(k => colNum(cols1, k)).filter(Boolean)
+      .forEach(ci => {
+        const c = tot.getCell(ci);
+        c.numFmt    = 'R$ #,##0.00;(R$ #,##0.00)';
+        c.alignment = { horizontal:'right', vertical:'middle' };
+      });
+    tot.getCell(colNum(cols1, 'data')).alignment   = { horizontal:'center', vertical:'middle' };
+    tot.getCell(colNum(cols1, 'evento')).alignment = { horizontal:'center', vertical:'middle' };
   }
 
-  ws1.autoFilter = { from:'A2', to:`S2` };
+  ws1.autoFilter = { from:'A2', to:`${colLetter(cols1.length)}2` };
 
   /* ══════════════════════════════════════════════
      SHEET 2 — Resumo por Mês (ano atual)
@@ -251,12 +267,12 @@ export async function exportarShows(shows) {
     { key:'fat',  header:'Faturamento (R$)',  width:18 },
     { key:'cus',  header:'Custos (R$)',       width:15 },
     { key:'dan',  header:'Daniel (R$)',       width:15 },
-    { key:'yur',  header:'Yuri (R$)',         width:15 },
+    ...(isBraichi ? [] : [{ key:'yur', header:'Yuri (R$)', width:15 }]),
     { key:'luc',  header:'Lucro DJ (R$)',     width:16 },
     { key:'mar',  header:'Margem %',          width:12 },
   ];
   ws2.columns = cols2.map(c => ({ key:c.key, width:c.width }));
-  titleRow(ws2, `DRUDS FINANCEIRO — Por Mês — ${anoAtual}`, cols2.length);
+  titleRow(ws2, `${djId} FINANCEIRO — Por Mês — ${anoAtual}`, cols2.length);
 
   const hdrRow2 = ws2.getRow(2);
   hdrRow2.height = 22;
@@ -269,8 +285,8 @@ export async function exportarShows(shows) {
     const sm  = showsAno.filter(s => s.mes === mesNum);
     const fat = sm.reduce((a, s) => a + (s.cache  || 0), 0);
     const cus = sm.reduce((a, s) => a + (s.custos || 0), 0);
-    const dan = sm.reduce((a, s) => a + calcDaniel(s),   0);
-    const yur = sm.reduce((a, s) => a + calcYuri(s),     0);
+    const dan = sm.reduce((a, s) => a + calcD(s),   0);
+    const yur = sm.reduce((a, s) => a + calcY(s),     0);
     const luc = fat - cus - dan - yur;
     const mar = fat > 0 ? luc / fat : 0;
 
@@ -278,7 +294,7 @@ export async function exportarShows(shows) {
     row.height = 20;
     const bg2  = { argb: mi % 2 === 0 ? C.WHITE : C.GREY_L };
 
-    [nomeMes, sm.length, fat, cus, dan, yur, luc, mar].forEach((val, ci) => {
+    [nomeMes, sm.length, fat, cus, dan, ...(isBraichi ? [] : [yur]), luc, mar].forEach((val, ci) => {
       const cell = row.getCell(ci + 1);
       cell.value = val;
       cell.font  = { name:'Arial', size:9.5 };
@@ -287,18 +303,19 @@ export async function exportarShows(shows) {
       cell.border = { bottom:{ style:'hair', color:{ argb:'FFD0D5DD' } } };
     });
 
-    row.getCell(1).font = { name:'Arial', size:9.5, bold:true };
-    row.getCell(2).alignment = { horizontal:'center', vertical:'middle' };
+    row.getCell(colNum(cols2, 'mes')).font = { name:'Arial', size:9.5, bold:true };
+    row.getCell(colNum(cols2, 'qtd')).alignment = { horizontal:'center', vertical:'middle' };
 
-    [3, 4, 5, 6].forEach(ci => setCurrency(row.getCell(ci)));
+    ['fat','cus','dan','yur'].map(k => colNum(cols2, k)).filter(Boolean)
+      .forEach(ci => setCurrency(row.getCell(ci)));
 
-    const lucCell = row.getCell(7);
+    const lucCell = row.getCell(colNum(cols2, 'luc'));
     setCurrency(lucCell);
     if (luc !== 0) {
       lucCell.font = { name:'Arial', size:9.5, bold:true, color:{ argb:luc >= 0 ? C.GREEN : C.RED } };
     }
 
-    const marCell = row.getCell(8);
+    const marCell = row.getCell(colNum(cols2, 'mar'));
     marCell.numFmt    = '0.0%;(0.0%)';
     marCell.alignment = { horizontal:'center', vertical:'middle' };
     marCell.font      = { name:'Arial', size:9.5, bold:true };
@@ -307,29 +324,33 @@ export async function exportarShows(shows) {
   /* Totais Sheet 2 */
   const tot2 = ws2.getRow(15);
   tot2.height = 24;
-  [
-    'TOTAL',
-    showsAno.length,
-    { formula:'SUM(C3:C14)' },
-    { formula:'SUM(D3:D14)' },
-    { formula:'SUM(E3:E14)' },
-    { formula:'SUM(F3:F14)' },
-    { formula:'SUM(G3:G14)' },
-    { formula:'IFERROR(G15/C15,0)' },
-  ].forEach((val, ci) => {
+  const sum2 = key => {
+    const L = colLetter(colNum(cols2, key));
+    return { formula:`SUM(${L}3:${L}14)` };
+  };
+  const luc2L = colLetter(colNum(cols2, 'luc'));
+  const fat2L = colLetter(colNum(cols2, 'fat'));
+  cols2.map(c => {
+    if (c.key === 'mes') return 'TOTAL';
+    if (c.key === 'qtd') return showsAno.length;
+    if (['fat','cus','dan','yur','luc'].includes(c.key)) return sum2(c.key);
+    if (c.key === 'mar') return { formula:`IFERROR(${luc2L}15/${fat2L}15,0)` };
+    return '';
+  }).forEach((val, ci) => {
     const cell = tot2.getCell(ci + 1);
     cell.value = val;
     totalsStyle(cell);
   });
 
-  [3, 4, 5, 6, 7].forEach(ci => {
+  ['fat','cus','dan','yur','luc'].map(k => colNum(cols2, k)).filter(Boolean).forEach(ci => {
     const c = tot2.getCell(ci);
     c.numFmt    = 'R$ #,##0.00;(R$ #,##0.00)';
     c.alignment = { horizontal:'right', vertical:'middle' };
   });
-  tot2.getCell(8).numFmt    = '0.0%;(0.0%)';
-  tot2.getCell(8).alignment = { horizontal:'center', vertical:'middle' };
-  [1, 2].forEach(ci => tot2.getCell(ci).alignment = { horizontal:'center', vertical:'middle' });
+  const marTot = tot2.getCell(colNum(cols2, 'mar'));
+  marTot.numFmt    = '0.0%;(0.0%)';
+  marTot.alignment = { horizontal:'center', vertical:'middle' };
+  [colNum(cols2, 'mes'), colNum(cols2, 'qtd')].forEach(ci => tot2.getCell(ci).alignment = { horizontal:'center', vertical:'middle' });
 
   /* ══════════════════════════════════════════════
      SHEET 3 — Por Contratante (todos os anos)
@@ -349,7 +370,7 @@ export async function exportarShows(shows) {
     { key:'canc',  header:'Cancelados',      width:12 },
   ];
   ws3.columns = cols3.map(c => ({ key:c.key, width:c.width }));
-  titleRow(ws3, 'DRUDS FINANCEIRO — Por Contratante — Todos os Anos', cols3.length);
+  titleRow(ws3, `${djId} FINANCEIRO — Por Contratante — Todos os Anos`, cols3.length);
 
   const hdrRow3 = ws3.getRow(2);
   hdrRow3.height = 22;
@@ -437,7 +458,7 @@ export async function exportarShows(shows) {
   const url    = URL.createObjectURL(blob);
   const a      = document.createElement('a');
   a.href       = url;
-  a.download   = `druds-shows-${agora.toISOString().slice(0, 10)}.xlsx`;
+  a.download   = `${djId.toLowerCase()}-shows-${agora.toISOString().slice(0, 10)}.xlsx`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
