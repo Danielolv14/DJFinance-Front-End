@@ -5,6 +5,7 @@ import { exportarShows } from '../services/excelService';
 import ItinerarioModal from '../components/ItinerarioModal';
 import { usePlanilhaUrl } from '../components/PlanilhaOnlineModal';
 import useIsMobile from '../hooks/useIsMobile';
+import { useDJ } from '../context/DJContext';
 
 /* ─── constants ─── */
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -334,11 +335,12 @@ export default function VisaoGeralPage({ shows: showsAll, loading, onEditar, onA
   const [showUrlInput,  setShowUrlInput] = useState(false);
   const [urlInput,      setUrlInput]     = useState('');
   const [sheetsUrl, setSheetsUrl]         = usePlanilhaUrl();
+  const { djConfig } = useDJ();
 
   async function handleExportar() {
     if (exportando || shows.length === 0) return;
     setExportando(true);
-    try { await exportarShows(shows); }
+    try { await exportarShows(shows, djConfig); }
     catch (e) { console.error('Export error:', e); }
     finally { setExportando(false); }
   }

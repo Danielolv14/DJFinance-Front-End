@@ -84,6 +84,44 @@ function ResultCard({ label, val, color, detail, large }) {
 
 const STATUS_COLOR = { CONFIRMADO: '#3dd457', PENDENTE: '#ffd60a', CANCELADO: '#ff453a' };
 
+function gerarMsgWPP(dados, nomeMes, ano, djNome, isBraichi, imposto) {
+  const sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  const fmtDDMM = d => {
+    if (!d) return '—';
+    const p = d.toString().split('-');
+    return `${p[2]}/${p[1]}`;
+  };
+  const lines = [
+    sep,
+    `🎧 *FECHAMENTO MENSAL — ${djNome.toUpperCase()} DJ*`,
+    `📅 *${nomeMes} / ${ano}*`,
+    sep,
+    `*${dados.quantidadeShows} show${dados.quantidadeShows !== 1 ? 's' : ''} realizado${dados.quantidadeShows !== 1 ? 's' : ''}*`,
+    '',
+    '📋 *SHOWS DO MÊS:*',
+  ];
+  dados.shows.forEach((s, i) => {
+    const local = s.endereco || s.contratante || '—';
+    const cache = s.cache ? moeda(s.cache) : 'A definir';
+    lines.push(`*${i + 1}. ${(s.evento || '—').toUpperCase()}* — ${fmtDDMM(s.data)} / 📍 ${local} · ${cache}`);
+  });
+  lines.push('');
+  lines.push('💰 *RESUMO FINANCEIRO:*');
+  lines.push(`💵 Total Bruto: *${moeda(dados.totalBruto)}*`);
+  if (isBraichi) {
+    lines.push(`🎛️ Daniel (10%): *${moeda(dados.totalDaniel)}*`);
+    if (dados.totalProdutor > 0) lines.push(`🎚️ Produtor: *${moeda(dados.totalProdutor)}*`);
+  } else {
+    lines.push(`👤 Daniel: *${moeda(dados.totalDaniel)}*`);
+    if (dados.totalYuri > 0) lines.push(`👤 Yuri: *${moeda(dados.totalYuri)}*`);
+  }
+  if (dados.totalCustos > 0) lines.push(`📦 Outros Custos: *${moeda(dados.totalCustos)}*`);
+  if (dados.totalImpostos > 0) lines.push(`🧾 Impostos (${imposto}%): *${moeda(dados.totalImpostos)}*`);
+  lines.push(`✅ *Lucro Líquido: ${moeda(dados.lucroLiquido)}*`);
+  lines.push(sep);
+  return lines.join('\n');
+}
+
 export default function FechamentoMensal({ mockFechamento }) {
   const isMobile = useIsMobile();
   const { djConfig } = useDJ();
@@ -96,6 +134,7 @@ export default function FechamentoMensal({ mockFechamento }) {
   const [loading,    setLoading]    = useState(false);
   const [erro,       setErro]       = useState('');
   const [gerandoPDF, setGerandoPDF] = useState(false);
+  const [copiado,    setCopiado]    = useState(false);
 
   async function buscar() {
     setErro(''); setDados(null); setLoading(true);
@@ -110,10 +149,23 @@ export default function FechamentoMensal({ mockFechamento }) {
     finally { setLoading(false); }
   }
 
+  async function copiarWPP() {
+    if (!dados) return;
+    const djNome = djConfig?.nome || 'DRUDS';
+    const msg = gerarMsgWPP(dados, nomeMes, ano, djNome, isBraichi, imposto);
+    try {
+      await navigator.clipboard.writeText(msg);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      alert('Não foi possível copiar. Tente manualmente:\n\n' + msg);
+    }
+  }
+
   async function exportarPDF() {
     if (!dados) return;
     setGerandoPDF(true);
-    try { await gerarPDFFechamento(dados); }
+    try { await gerarPDFFechamento(dados, djConfig); }
     catch (err) { alert('Erro ao gerar PDF: ' + err.message); }
     finally { setGerandoPDF(false); }
   }
@@ -199,6 +251,26 @@ export default function FechamentoMensal({ mockFechamento }) {
               }}
             >
               {gerandoPDF ? 'GERANDO···' : 'EXPORTAR PDF'}
+            </motion.button>
+          )}
+
+          {dados && (
+            <motion.button
+              onClick={copiarWPP}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                padding: '10px 20px',
+                background: copiado ? 'rgba(37,211,102,0.15)' : 'rgba(37,211,102,0.06)',
+                border: `1px solid ${copiado ? 'rgba(37,211,102,0.5)' : 'rgba(37,211,102,0.2)'}`,
+                borderRadius: 5, cursor: 'pointer',
+                color: copiado ? '#25d366' : 'rgba(37,211,102,0.7)',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+                alignSelf: 'flex-end',
+                transition: 'all 0.2s',
+              }}
+            >
+              {copiado ? '✓ COPIADO!' : '📱 COPIAR WPP'}
             </motion.button>
           )}
         </div>
