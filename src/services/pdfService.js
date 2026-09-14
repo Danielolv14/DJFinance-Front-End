@@ -350,7 +350,7 @@ export async function gerarPDFFechamento(dados, djConfig) {
                sub:'cachê do produtor' }]
           : [])
       : [{ label:'YURI', value: moeda(dados.totalYuri), color: PURPLE,
-           sub:'R$300/show' }]),
+           sub:'R$250/show' }]),
     ...(dados.totalCustos > 0
       ? [{ label:'CUSTOS', value: moeda(dados.totalCustos), color: RED,
            sub:`${dados.totalBruto>0 ? Math.round((dados.totalCustos/dados.totalBruto)*100) : 0}% do bruto` }]
