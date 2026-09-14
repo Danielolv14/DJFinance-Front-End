@@ -25,7 +25,7 @@ function calcDanielBraichi(show) {
 }
 function calcYuri(show) {
   if (show.semCacheYuri) return 0;
-  return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 300;
+  return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 250;
 }
 function fmtData(d) {
   if (!d) return '—';

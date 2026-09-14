@@ -43,7 +43,7 @@ function calcDanielBraichi(show) {
 }
 function calcYuri(show) {
   if (show.semCacheYuri) return 0;
-  return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 300;
+  return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 250;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -698,7 +698,7 @@ export default function DashboardPage({ shows }) {
           <div className="space-y-4">
             <DistRow label="Lucro DJ"          value={Math.max(lucroLiquido,0)} total={totalBruto} color="hsl(217 90% 55%)" />
             <DistRow label={`Daniel (${new Date() >= INICIO_PERCENTUAL_20 ? '20' : '10'}%)`} value={totalDaniel} total={totalBruto} color="hsl(30 95% 55%)" />
-            {!isBraichi && <DistRow label="Yuri (R$300/set)" value={totalYuri} total={totalBruto} color="hsl(150 70% 45%)" />}
+            {!isBraichi && <DistRow label="Yuri (R$250/set)" value={totalYuri} total={totalBruto} color="hsl(150 70% 45%)" />}
             <DistRow label="Custos Op."          value={totalCustos} total={totalBruto} color="hsl(0 75% 55%)" />
           </div>
         </Card>
