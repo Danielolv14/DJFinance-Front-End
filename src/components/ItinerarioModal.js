@@ -30,6 +30,16 @@ function nowStamp() {
 }
 
 /* ──────────────────── WPP text ──────────────────── */
+function minutosNoite(hora) {
+  if (!hora) return Number.MAX_SAFE_INTEGER;
+  const p = String(hora).split(':');
+  let h = parseInt(p[0], 10);
+  if (isNaN(h)) return Number.MAX_SAFE_INTEGER;
+  const min = parseInt(p[1], 10) || 0;
+  if (h < 6) h += 24; // madrugada conta como fim da noite
+  return h * 60 + min;
+}
+
 function generateWPP(showsByDate, extras, djNome) {
   const dates = Object.keys(showsByDate).sort();
   const lines = [];
@@ -365,7 +375,7 @@ export default function ItinerarioModal({ shows, onClose }) {
       .filter(s => s.data >= dataInicio && s.data <= dataFim)
       .sort((a, b) => a.data !== b.data
         ? a.data.localeCompare(b.data)
-        : (a.horaInicio || '').localeCompare(b.horaInicio || ''))
+        : minutosNoite(a.horaInicio) - minutosNoite(b.horaInicio))
       .forEach(s => {
         if (!map[s.data]) map[s.data] = [];
         map[s.data].push(s);
