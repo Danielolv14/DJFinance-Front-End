@@ -246,9 +246,9 @@ const INICIO_PERC_10  = new Date('2026-01-01');
 const INICIO_PERC_20  = new Date('2026-04-01');
 
 function calcDanielLocal(show) {
-  if (show.semCacheDaniel) return 0;
   const d = new Date(show.data + 'T00:00:00');
   if (d < INICIO_EQUIPE) return 0;
+  if (show.semCacheDaniel) return show.cache > 0 ? show.cache * 0.10 : 0; // sem cachê: só 10% do bruto, sem transporte
   if (d < INICIO_PERC_10) return 50;
   if (!(show.cache > 0)) return 110 + 40;
   const p = d < INICIO_PERC_20 ? 0.10 : 0.20;

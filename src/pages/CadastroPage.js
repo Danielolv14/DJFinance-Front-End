@@ -586,7 +586,7 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
               <ToggleCard
                 name="semCacheDaniel" checked={form.semCacheDaniel} onChange={handleChange}
                 label="SEM CACHÊ · DANIEL"
-                sub="Daniel não recebe neste show"
+                sub="Daniel recebe só 10% do cachê bruto, sem transporte"
                 color="#ff453a"
               />
               {isBraichi ? (
