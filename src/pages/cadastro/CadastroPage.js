@@ -3,203 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createShow, updateShow } from '../../services/api';
 import useIsMobile from '../../hooks/useIsMobile';
 import { useDJ } from '../../context/DJContext';
-import { MESES } from '../../utils/format';
-import { superficie, COR_ABA, STATUS_COR } from '../../utils/tema';
+import { MESES, moedaComCentavos } from '../../utils/format';
+import { STATUS_COR } from '../../utils/tema';
+import { VAZIO, calcularDuracao, dataBloqueada } from './formulario';
+import { ACCENT, SectionPanel, Field, inputStyle, HwInput, HwSelect, HwTextarea, ToggleCard } from './Campos';
 
 /* ─── constants ─── */
 const STATUS_OPCOES = ['CONFIRMADO', 'PENDENTE', 'CANCELADO'].map(s => ({ value: s, label: s, color: STATUS_COR[s] }));
-
-const VAZIO = {
-  nome:'', data:'', ano: new Date().getFullYear(), mes: new Date().getMonth()+1,
-  evento:'', status:'CONFIRMADO',
-  horaInicio:'', horaTermino:'', duracao:'',
-  cache:'', xdj:false, adiantamento:false, valorAdiantamento:'',
-  semCacheDaniel: false, semCacheYuri: false,
-  temProdutor: false, valorProdutor: '',
-  contratante:'', endereco:'', rider:'', custos:'', observacoes:'',
-};
-
-function calcularDuracao(inicio, termino) {
-  if (!inicio || !termino) return '';
-  const [h1,m1] = inicio.split(':').map(Number);
-  const [h2,m2] = termino.split(':').map(Number);
-  let totalMin = (h2*60+m2) - (h1*60+m1);
-  if (totalMin < 0) totalMin += 24*60;
-  const h = Math.floor(totalMin/60);
-  const m = totalMin%60;
-  if (h === 0) return `${m}min`;
-  if (m === 0) return `${h}h`;
-  return `${h}h${String(m).padStart(2,'0')}min`;
-}
-
-function moedaFmt(v) {
-  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
-}
-
-function dataBloqueada(data, bloqueios) {
-  if (!data || !bloqueios?.length) return null;
-  const d = new Date(data + 'T00:00:00');
-  return bloqueios.find(b => {
-    const inicio = new Date(b.dataInicio + 'T00:00:00');
-    const fim    = new Date(b.dataFim    + 'T00:00:00');
-    return d >= inicio && d <= fim;
-  }) || null;
-}
-
-/* ─── design tokens ─── */
-const ACCENT = COR_ABA.cadastro;
-
-/* ─── sub-components ─── */
-function SectionPanel({ color, label, icon, children }) {
-  return (
-    <div style={{ ...superficie, padding: '20px 24px', borderTop: `2px solid ${color}` }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-        <span style={{
-          width: 7, height: 7, borderRadius: '50%', background: color,
-          boxShadow: `0 0 6px ${color}`, flexShrink: 0,
-        }} />
-        <div>
-          <div style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 9, color: `${color}cc`, letterSpacing: '0.2em', textTransform: 'uppercase',
-          }}>
-            {icon} {label}
-          </div>
-        </div>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Field({ label, required, error, children }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <label style={{
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 9, color: error ? '#ff453a' : 'rgba(255,255,255,0.3)',
-        letterSpacing: '0.15em', textTransform: 'uppercase',
-      }}>
-        {label}{required && <span style={{ color: '#ff453a', marginLeft: 3 }}>*</span>}
-      </label>
-      {children}
-      {error && (
-        <span style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 9, color: '#ff453a', letterSpacing: '0.08em',
-        }}>
-          {error}
-        </span>
-      )}
-    </div>
-  );
-}
-
-const inputStyle = (error) => ({
-  background: '#0d0e14',
-  border: `1px solid ${error ? '#ff453a60' : 'rgba(255,255,255,0.08)'}`,
-  borderRadius: 4,
-  color: 'rgba(255,255,255,0.88)',
-  fontFamily: "'JetBrains Mono', monospace",
-  fontSize: 12,
-  padding: '10px 12px',
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.15s',
-});
-
-function HwInput({ name, value, onChange, type = 'text', placeholder, error, readOnly, min, step }) {
-  return (
-    <input
-      name={name} value={value} onChange={onChange}
-      type={type} placeholder={placeholder} readOnly={readOnly}
-      min={min} step={step}
-      style={inputStyle(error)}
-      onFocus={e => { if (!error) e.target.style.borderColor = `${ACCENT}50`; }}
-      onBlur={e => { if (!error) e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-    />
-  );
-}
-
-function HwSelect({ name, value, onChange, children, error }) {
-  return (
-    <select
-      name={name} value={value} onChange={onChange}
-      style={{
-        ...inputStyle(error),
-        cursor: 'pointer',
-        appearance: 'none',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.2)'/%3E%3C/svg%3E")`,
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'right 10px center',
-        paddingRight: 28,
-      }}
-    >
-      {children}
-    </select>
-  );
-}
-
-function HwTextarea({ name, value, onChange, placeholder, rows = 3 }) {
-  return (
-    <textarea
-      name={name} value={value} onChange={onChange}
-      placeholder={placeholder} rows={rows}
-      style={{
-        ...inputStyle(false),
-        resize: 'vertical',
-        lineHeight: 1.5,
-      }}
-      onFocus={e => e.target.style.borderColor = `${ACCENT}50`}
-      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-    />
-  );
-}
-
-function ToggleCard({ name, checked, onChange, label, sub, color = ACCENT }) {
-  return (
-    <label style={{
-      display: 'flex', alignItems: 'center', gap: 14,
-      padding: '14px 16px',
-      background: checked ? `${color}0d` : 'rgba(255,255,255,0.02)',
-      border: `1px solid ${checked ? color + '35' : 'rgba(255,255,255,0.06)'}`,
-      borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s',
-    }}>
-      <input type="checkbox" name={name} checked={checked} onChange={onChange} style={{ display: 'none' }} />
-
-      {/* Toggle track */}
-      <div style={{
-        width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-        background: checked ? color : 'rgba(255,255,255,0.08)',
-        border: `1px solid ${checked ? color : 'rgba(255,255,255,0.1)'}`,
-        position: 'relative', transition: 'all 0.2s',
-        boxShadow: checked ? `0 0 10px ${color}50` : 'none',
-      }}>
-        <div style={{
-          position: 'absolute', top: 2,
-          left: checked ? 18 : 2,
-          width: 14, height: 14, borderRadius: '50%',
-          background: checked ? '#fff' : 'rgba(255,255,255,0.3)',
-          transition: 'left 0.2s',
-        }} />
-      </div>
-
-      <div>
-        <div style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 11, fontWeight: 700, color: checked ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)',
-          letterSpacing: '0.06em',
-        }}>
-          {label}
-        </div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
-          {sub}
-        </div>
-      </div>
-    </label>
-  );
-}
 
 /* ═══════════════ PAGE ═══════════════ */
 export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEdicao, bloqueios = [], shows = [] }) {
@@ -535,7 +345,7 @@ export default function CadastroPage({ onShowSalvo, showParaEditar, onCancelarEd
                   }}>
                     <span style={{ color: 'rgba(255,255,255,0.45)' }}>
                       Último cachê com este contratante:{' '}
-                      <strong style={{ color: '#4d8fff' }}>{moedaFmt(sugestaoCache)}</strong>
+                      <strong style={{ color: '#4d8fff' }}>{moedaComCentavos(sugestaoCache)}</strong>
                     </span>
                     <button
                       type="button"
