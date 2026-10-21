@@ -20,19 +20,6 @@ function fmtDataShort(d) {
   const parts = d.toString().split('-');
   return `${parts[2]}/${parts[1]}`;
 }
-function calcDanielLocal(show) {
-  const INICIO_EQUIPE_L  = new Date('2025-03-01');
-  const INICIO_PERC_10_L = new Date('2026-01-01');
-  const INICIO_PERC_20_L = new Date('2026-04-01');
-  const d = new Date(show.data + 'T00:00:00');
-  if (d < INICIO_EQUIPE_L) return 0;
-  if (show.semCacheDaniel) return show.cache > 0 ? show.cache * 0.10 : 0; // sem cachê: só 10% do bruto, sem transporte
-  if (d < INICIO_PERC_10_L) return 50;
-  if (!(show.cache > 0)) return 70 + 40;
-  const p = d < INICIO_PERC_20_L ? 0.10 : 0.20;
-  const base = show.cache - (show.custos || 0);
-  return (base > 0 ? base * p : 0) + 40;
-}
 function parseDuracao(d) {
   if (!d) return 0;
   const m = d.match(/(\d+)h(?:(\d+)(?:min)?)?/i);

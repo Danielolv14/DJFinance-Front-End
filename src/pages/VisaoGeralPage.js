@@ -17,11 +17,6 @@ const STATUS_LABELS = { CONFIRMADO:'CONFIRMADO', PENDENTE:'PENDENTE', CANCELADO:
 function moeda(v) {
   return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0}).format(v||0);
 }
-function fmtData(d) {
-  if (!d) return '—';
-  const [a,m,dia] = d.toString().split('-');
-  return `${dia}/${m}/${a}`;
-}
 
 /* ─── sub-components ─── */
 function LedDot({ color = '#3dd457', pulse = false }) {

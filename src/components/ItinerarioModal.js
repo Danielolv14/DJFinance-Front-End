@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDJ } from '../context/DJContext';
 
 /* ──────────────────── helpers ──────────────────── */
@@ -17,12 +17,6 @@ function fmtDateLong(iso) {
   if (!iso) return '';
   const d = new Date(iso + 'T12:00:00');
   return `${DIAS_SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES_FULL[d.getMonth()]} de ${d.getFullYear()}`;
-}
-function subtractMinutes(timeStr, minutes) {
-  if (!timeStr || minutes === '' || minutes == null) return '';
-  const [h, m] = timeStr.split(':').map(Number);
-  const norm = ((h * 60 + m - Number(minutes)) % 1440 + 1440) % 1440;
-  return `${String(Math.floor(norm / 60)).padStart(2,'0')}:${String(norm % 60).padStart(2,'0')}`;
 }
 function nowStamp() {
   const n = new Date();
@@ -53,8 +47,6 @@ function generateWPP(showsByDate, extras, djNome) {
     shows.forEach((show, idx) => {
       const ex    = extras[show.id] || {};
       const num   = idx + 1;
-      const traj  = ex.tempoTrajeto ?? '';
-      const saida = ex.horaSaida ?? '';
       const rider = ex.rider ?? (show.rider || 'Combo de Gin');
 
       lines.push('');
@@ -82,7 +74,7 @@ function buildPDFHtml(showsByDate, extras, djNome) {
   let globalIdx = 0;
 
   let bodyHtml = '';
-  dates.forEach((date, dateIdx) => {
+  dates.forEach(date => {
     const dayShows = showsByDate[date];
     const d = new Date(date + 'T12:00:00');
 
@@ -98,7 +90,7 @@ function buildPDFHtml(showsByDate, extras, djNome) {
         </div>
       </div>`;
 
-    dayShows.forEach((show, idx) => {
+    dayShows.forEach(show => {
       const ex    = extras[show.id] || {};
       const num   = ++globalIdx;
       const col   = accentColors[(globalIdx - 1) % accentColors.length];
@@ -324,33 +316,6 @@ const surface = {
   borderRadius: 10,
   boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
 };
-
-function Toggle({ checked, onChange, label }) {
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', userSelect: 'none' }}>
-      <div style={{
-        width: 30, height: 16, borderRadius: 8, flexShrink: 0,
-        background: checked ? ACCENT : 'rgba(255,255,255,0.1)',
-        border: `1px solid ${checked ? ACCENT : 'rgba(255,255,255,0.12)'}`,
-        position: 'relative', transition: 'all 0.2s',
-        boxShadow: checked ? `0 0 8px ${ACCENT}60` : 'none',
-      }}>
-        <div style={{
-          position: 'absolute', top: 2, left: checked ? 14 : 2,
-          width: 10, height: 10, borderRadius: '50%',
-          background: checked ? '#fff' : 'rgba(255,255,255,0.35)',
-          transition: 'left 0.18s',
-        }} />
-      </div>
-      <input type="checkbox" checked={checked} onChange={onChange} style={{ display: 'none' }} />
-      <span style={{
-        fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-        color: checked ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.3)',
-        letterSpacing: '0.06em',
-      }}>{label}</span>
-    </label>
-  );
-}
 
 /* ════════════════════════════════════════════════════════════
    MODAL

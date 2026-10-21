@@ -1,8 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useDJ } from '../context/DJContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, Clock, Music, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getProjecao } from '../services/api';
 
 import WaveformChart    from '../components/xdj/WaveformChart';
 import PerformanceRadar from '../components/xdj/PerformanceRadar';
@@ -69,7 +68,6 @@ function VinylChart({ value, total, color, label, sublabel, size = 200 }) {
   const radius   = 82;
   const circ     = 2 * Math.PI * radius;
   const filled   = circ * ratio;
-  const offset   = circ * (1 - ratio);
   const sz       = size;
 
   return (
@@ -258,7 +256,7 @@ function MonthSelector({ mesSel, onSelect, waveformData }) {
 /* ════════════════════════════════════════════════════════════
    SHOW ROW
    ════════════════════════════════════════════════════════════ */
-function ShowRow({ show, rank, color }) {
+function ShowRow({ show, color }) {
   return (
     <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl transition-colors hover:bg-white/[0.03]">
       <div className="w-1 rounded-full flex-shrink-0" style={{ height: 36, background: color, boxShadow: `0 0 6px ${color}60` }} />
@@ -673,7 +671,7 @@ export default function DashboardPage({ shows }) {
                 <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'hsl(220 10% 30%)' }}>Sem shows confirmados</p>
               )}
               {ultimosShows.map((s, i) => (
-                <ShowRow key={i} show={s} rank={i} color={rankColors[i % rankColors.length]} />
+                <ShowRow key={i} show={s} color={rankColors[i % rankColors.length]} />
               ))}
             </div>
           </Card>
