@@ -2,34 +2,13 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BloqueioAgenda from '../components/BloqueioAgenda';
 import useIsMobile from '../hooks/useIsMobile';
+import { moeda, MESES, MESES_ABREV } from '../utils/format';
+import { superficie, STATUS_COR } from '../utils/tema';
+import LedDot from '../components/LedDot';
 
 /* ─── constants ─── */
-const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const MESES_ABR  = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const MESES_ABR = MESES_ABREV.map(m => m.toUpperCase());
 const DIAS_SEMANA = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
-const STATUS_COLOR = { CONFIRMADO: '#3dd457', PENDENTE: '#ffd60a', CANCELADO: '#ff453a' };
-
-function moeda(v) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(v || 0);
-}
-
-function LedDot({ color = '#3dd457', pulse = false, size = 8 }) {
-  return (
-    <span style={{
-      display: 'inline-block', width: size, height: size,
-      borderRadius: '50%', background: color, flexShrink: 0,
-      boxShadow: `0 0 6px ${color}, 0 0 10px ${color}60`,
-      animation: pulse ? 'ledPulse 1.2s ease-in-out infinite' : 'none',
-    }} />
-  );
-}
-
-const surface = {
-  background: '#13141a',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 8,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-};
 
 /* ═══════════════ PAGE ═══════════════ */
 export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtualizado }) {
@@ -100,7 +79,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
           <div>
             <div style={{ fontSize: 11, color: 'rgba(61,212,87,0.7)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>DECK 2 · CALENDÁRIO</div>
             <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1.2 }}>
-              {MESES_FULL[mes]} {ano}
+              {MESES[mes]} {ano}
             </div>
           </div>
         </div>
@@ -186,7 +165,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.07 }}
             style={{
-              ...surface,
+              ...superficie,
               padding: '12px 18px',
               borderTop: `2px solid ${k.color}`,
               flex: k.wide ? '1' : 'none',
@@ -211,7 +190,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
             transition={{ duration: 0.2 }}
             style={{ marginBottom: 20, overflow: 'hidden' }}
           >
-            <div style={{ ...surface, padding: '16px 20px', borderTop: '2px solid #ff453a' }}>
+            <div style={{ ...superficie, padding: '16px 20px', borderTop: '2px solid #ff453a' }}>
               <BloqueioAgenda bloqueios={bloqueios} onAtualizar={onBloqueioAtualizado} />
             </div>
           </motion.div>
@@ -222,7 +201,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 280px', gap: 16 }}>
 
         {/* Calendar */}
-        <div style={{ ...surface, padding: 16 }}>
+        <div style={{ ...superficie, padding: 16 }}>
 
           {/* Weekday headers */}
           <div style={{
@@ -315,14 +294,14 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                     temShow && (
                       <div style={{
                         width: 5, height: 5, borderRadius: '50%', margin: '2px auto 0',
-                        background: STATUS_COLOR[showsDia[0]?.status] || '#9a7ef8',
-                        boxShadow: `0 0 4px ${STATUS_COLOR[showsDia[0]?.status] || '#9a7ef8'}`,
+                        background: STATUS_COR[showsDia[0]?.status] || '#9a7ef8',
+                        boxShadow: `0 0 4px ${STATUS_COR[showsDia[0]?.status] || '#9a7ef8'}`,
                       }} />
                     )
                   ) : (
                     <>
                       {showsDia.slice(0, 2).map((s, j) => {
-                        const cor = STATUS_COLOR[s.status] || '#9a7ef8';
+                        const cor = STATUS_COR[s.status] || '#9a7ef8';
                         return (
                           <div key={j} style={{
                             fontSize: 8, fontWeight: 700, letterSpacing: '0.04em',
@@ -362,9 +341,9 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 12 }}
                 style={{
-                  ...surface,
+                  ...superficie,
                   padding: '16px',
-                  borderTop: `2px solid ${STATUS_COLOR[showSel.status] || '#9a7ef8'}`,
+                  borderTop: `2px solid ${STATUS_COR[showSel.status] || '#9a7ef8'}`,
                   flex: 1,
                 }}
               >
@@ -392,9 +371,9 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                 <div style={{ marginBottom: 14 }}>
                   <span style={{
                     fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
-                    color: STATUS_COLOR[showSel.status] || '#9a7ef8',
-                    background: (STATUS_COLOR[showSel.status] || '#9a7ef8') + '18',
-                    border: `1px solid ${(STATUS_COLOR[showSel.status] || '#9a7ef8')}40`,
+                    color: STATUS_COR[showSel.status] || '#9a7ef8',
+                    background: (STATUS_COR[showSel.status] || '#9a7ef8') + '18',
+                    border: `1px solid ${(STATUS_COR[showSel.status] || '#9a7ef8')}40`,
                     borderRadius: 3, padding: '3px 8px',
                     fontFamily: "'JetBrains Mono', monospace",
                   }}>
@@ -464,7 +443,7 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 style={{
-                  ...surface,
+                  ...superficie,
                   padding: '32px 20px', textAlign: 'center',
                 }}
               >
@@ -478,13 +457,13 @@ export default function CalendarioPage({ shows, bloqueios = [], onBloqueioAtuali
 
           {/* Next shows */}
           {proximosShows.length > 0 && (
-            <div style={{ ...surface, padding: '14px 16px' }}>
+            <div style={{ ...superficie, padding: '14px 16px' }}>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.2em', marginBottom: 10 }}>
                 PRÓXIMOS SHOWS
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {proximosShows.map(s => {
-                  const cor = STATUS_COLOR[s.status] || '#9a7ef8';
+                  const cor = STATUS_COR[s.status] || '#9a7ef8';
                   return (
                     <div
                       key={s.id}

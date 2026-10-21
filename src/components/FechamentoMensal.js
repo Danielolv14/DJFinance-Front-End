@@ -4,35 +4,18 @@ import { getFechamento } from '../services/api';
 import { gerarPDFFechamento } from '../services/pdfService';
 import useIsMobile from '../hooks/useIsMobile';
 import { useDJ } from '../context/DJContext';
+import { moeda, dataBR, MESES } from '../utils/format';
+import { superficie, STATUS_COR } from '../utils/tema';
 
 /* ─── constants ─── */
-const MESES = [
-  {value:1,label:'JANEIRO'},{value:2,label:'FEVEREIRO'},{value:3,label:'MARÇO'},
-  {value:4,label:'ABRIL'},{value:5,label:'MAIO'},{value:6,label:'JUNHO'},
-  {value:7,label:'JULHO'},{value:8,label:'AGOSTO'},{value:9,label:'SETEMBRO'},
-  {value:10,label:'OUTUBRO'},{value:11,label:'NOVEMBRO'},{value:12,label:'DEZEMBRO'},
-];
+const MESES_OPCOES = MESES.map((label, i) => ({ value: i + 1, label: label.toUpperCase() }));
 
 const ACCENT = '#ff6058';
 
-function moeda(v) {
-  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0}).format(v||0);
-}
-function fmtData(d) {
-  if (!d) return '—';
-  return d.toString().split('-').reverse().join('/');
-}
 function abrirMaps(endereco) {
   if (!endereco) return;
   window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`, '_blank');
 }
-
-const surface = {
-  background: '#13141a',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 8,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-};
 
 const inputStyle = {
   background: '#0d0e14',
@@ -49,7 +32,7 @@ function ResultCard({ label, val, color, detail, large }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
-        ...surface,
+        ...superficie,
         padding: '16px 20px',
         borderTop: `2px solid ${color}`,
         flex: large ? 2 : 1,
@@ -81,8 +64,6 @@ function ResultCard({ label, val, color, detail, large }) {
     </motion.div>
   );
 }
-
-const STATUS_COLOR = { CONFIRMADO: '#3dd457', PENDENTE: '#ffd60a', CANCELADO: '#ff453a' };
 
 function gerarMsgWPP(dados, nomeMes, ano, djNome, isBraichi, imposto) {
   const sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━';
@@ -170,7 +151,7 @@ export default function FechamentoMensal({ mockFechamento }) {
     finally { setGerandoPDF(false); }
   }
 
-  const nomeMes = MESES.find(m => m.value === Number(mes))?.label;
+  const nomeMes = MESES_OPCOES.find(m => m.value === Number(mes))?.label;
 
   return (
     <div style={{ padding: isMobile ? '0' : '24px 28px', maxWidth: 1100, margin: '0 auto', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -185,7 +166,7 @@ export default function FechamentoMensal({ mockFechamento }) {
       </div>
 
       {/* ── Controls ── */}
-      <div style={{ ...surface, padding: isMobile ? '16px' : '20px 24px', borderTop: `2px solid ${ACCENT}`, marginBottom: 20 }}>
+      <div style={{ ...superficie, padding: isMobile ? '16px' : '20px 24px', borderTop: `2px solid ${ACCENT}`, marginBottom: 20 }}>
         <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.2em', marginBottom: 14 }}>PARÂMETROS DO RELATÓRIO</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: isMobile ? '1 1 100%' : 'none' }}>
@@ -194,7 +175,7 @@ export default function FechamentoMensal({ mockFechamento }) {
               value={mes} onChange={e => setMes(e.target.value)}
               style={{ ...inputStyle, width: '100%', minWidth: isMobile ? 'unset' : 150 }}
             >
-              {MESES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              {MESES_OPCOES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: isMobile ? '1 1 calc(50% - 6px)' : 'none' }}>
@@ -329,7 +310,7 @@ export default function FechamentoMensal({ mockFechamento }) {
 
             {/* Shows table */}
             {dados.shows.length > 0 && (
-              <div style={{ ...surface, padding: '20px 24px', borderTop: `2px solid rgba(255,255,255,0.08)` }}>
+              <div style={{ ...superficie, padding: '20px 24px', borderTop: `2px solid rgba(255,255,255,0.08)` }}>
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.2em', marginBottom: 16 }}>
                   SHOWS DO PERÍODO
                 </div>
@@ -353,7 +334,7 @@ export default function FechamentoMensal({ mockFechamento }) {
                 {/* Table rows */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {dados.shows.map((s, i) => {
-                    const cor = STATUS_COLOR[s.status] || '#9a7ef8';
+                    const cor = STATUS_COR[s.status] || '#9a7ef8';
                     return (
                       <motion.div
                         key={s.id}
@@ -374,7 +355,7 @@ export default function FechamentoMensal({ mockFechamento }) {
                       >
                         {/* Data */}
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
-                          {fmtData(s.data)}
+                          {dataBR(s.data)}
                         </div>
                         {/* Evento */}
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

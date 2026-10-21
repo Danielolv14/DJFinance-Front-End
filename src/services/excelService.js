@@ -5,16 +5,10 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { pagamentoDaniel, pagamentoYuri } from '../utils/pagamentos';
+import { dataBR, MESES } from '../utils/format';
 
-function fmtData(d) {
-  if (!d) return '—';
-  return d.split('-').reverse().join('/');
-}
 const colNum    = (cols, key) => cols.findIndex(c => c.key === key) + 1; // 1-based; 0 se ausente
 const colLetter = n => String.fromCharCode(64 + n);                      // 1→A, 2→B, …
-
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 /* ── Paleta de cores (valores ARGB para ExcelJS) ── */
 const C = {
@@ -140,7 +134,7 @@ export async function exportarShows(shows, djConfig) {
 
     const vals = [
       idx + 1,
-      fmtData(show.data),
+      dataBR(show.data),
       show.evento      || '—',
       show.contratante || '—',
       show.endereco    || '—',

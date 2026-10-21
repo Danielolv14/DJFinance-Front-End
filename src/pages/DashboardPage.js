@@ -6,14 +6,10 @@ import { TrendingUp, DollarSign, Clock, Music, ChevronLeft, ChevronRight } from 
 
 import WaveformChart    from '../components/xdj/WaveformChart';
 import PerformanceRadar from '../components/xdj/PerformanceRadar';
+import { moeda, MESES, MESES_ABREV } from '../utils/format';
 
 /* ───────────────── helpers ───────────────── */
-const MESES_LABEL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const MESES_FULL  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-function moeda(v) {
-  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0}).format(v||0);
-}
 function moedaK(v) {
   if (Math.abs(v) >= 1000) return `R$${(v/1000).toFixed(1)}k`;
   return `R$${Math.round(v)}`;
@@ -185,7 +181,7 @@ function MonthSelector({ mesSel, onSelect, waveformData }) {
   const maxVal = Math.max(...waveformData.map(d => d.valor), 1);
   return (
     <div className="flex gap-1.5">
-      {MESES_LABEL.map((m, i) => {
+      {MESES_ABREV.map((m, i) => {
         const active = mesSel === i + 1;
         const hasData = waveformData[i]?.valor > 0;
         return (
@@ -351,7 +347,7 @@ export default function DashboardPage({ shows }) {
       cm[s.mes - 1] += (s.cache || 0);
       lm[s.mes - 1] += Math.max((s.cache||0) - pagamentoDaniel(s) - pagamentoYuri(s) - (s.custos||0), 0);
     });
-    return MESES_LABEL.map((label, i) => ({ label, valor: Math.round(cm[i]), lucro: Math.round(lm[i]) }));
+    return MESES_ABREV.map((label, i) => ({ label, valor: Math.round(cm[i]), lucro: Math.round(lm[i]) }));
   }, [confirmados]);
 
   /* Dados do mês selecionado */
@@ -569,7 +565,7 @@ export default function DashboardPage({ shows }) {
               <ChevronLeft size={14} />
             </button>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 700, color: 'hsl(217 90% 60%)', minWidth: 80, textAlign: 'center' }}>
-              {MESES_FULL[mesSel - 1]}
+              {MESES[mesSel - 1]}
             </div>
             <button onClick={nextMes} className="rounded-lg p-1.5 transition-colors hover:bg-white/5"
               style={{ color: 'hsl(220 10% 40%)', cursor: 'pointer', border: '1px solid hsl(220 8% 16%)' }}>
@@ -588,7 +584,7 @@ export default function DashboardPage({ shows }) {
 
         {/* ─── LEFT: Review do Mês ─── */}
         <Card delay={0.25}>
-          <SectionTitle title={`Review · ${MESES_LABEL[mesSel - 1]}`} />
+          <SectionTitle title={`Review · ${MESES_ABREV[mesSel - 1]}`} />
 
           <div className="flex justify-center mb-4">
             <VinylChart
@@ -596,7 +592,7 @@ export default function DashboardPage({ shows }) {
               total={mesBruto || 1}
               color="hsl(150 70% 45%)"
               label="Lucro do Mês"
-              sublabel={`${mesShows} set${mesShows !== 1 ? 's' : ''} · ${MESES_FULL[mesSel - 1]}`}
+              sublabel={`${mesShows} set${mesShows !== 1 ? 's' : ''} · ${MESES[mesSel - 1]}`}
               size={190}
             />
           </div>

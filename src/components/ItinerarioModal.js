@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useDJ } from '../context/DJContext';
+import { MESES } from '../utils/format';
 
 /* ──────────────────── helpers ──────────────────── */
-const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DIAS_SEMANA = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira',
                      'Quinta-feira','Sexta-feira','Sábado'];
 
@@ -16,7 +15,7 @@ function fmtDateBR(iso) {
 function fmtDateLong(iso) {
   if (!iso) return '';
   const d = new Date(iso + 'T12:00:00');
-  return `${DIAS_SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES_FULL[d.getMonth()]} de ${d.getFullYear()}`;
+  return `${DIAS_SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
 }
 function nowStamp() {
   const n = new Date();
@@ -82,7 +81,7 @@ function buildPDFHtml(showsByDate, extras, djNome) {
       <div class="date-row">
         <div class="date-badge">
           <span class="date-day">${d.getDate()}</span>
-          <span class="date-mon">${MESES_FULL[d.getMonth()].slice(0,3).toUpperCase()}</span>
+          <span class="date-mon">${MESES[d.getMonth()].slice(0,3).toUpperCase()}</span>
         </div>
         <div class="date-label">
           <span class="date-full">${fmtDateLong(date)}</span>

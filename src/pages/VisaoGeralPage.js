@@ -6,32 +6,16 @@ import ItinerarioModal from '../components/ItinerarioModal';
 import { usePlanilhaUrl } from '../components/PlanilhaOnlineModal';
 import useIsMobile from '../hooks/useIsMobile';
 import { useDJ } from '../context/DJContext';
+import { moeda, MESES_ABREV } from '../utils/format';
+import { STATUS_COR } from '../utils/tema';
+import LedDot from '../components/LedDot';
 
 /* ─── constants ─── */
-const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-const STATUS_COLOR  = { CONFIRMADO:'#3dd457', PENDENTE:'#ffd60a', CANCELADO:'#ff453a' };
 const STATUS_BG     = { CONFIRMADO:'rgba(61,212,87,.1)', PENDENTE:'rgba(255,214,10,.1)', CANCELADO:'rgba(255,69,58,.1)' };
 const STATUS_LABELS = { CONFIRMADO:'CONFIRMADO', PENDENTE:'PENDENTE', CANCELADO:'CANCELADO' };
 
-function moeda(v) {
-  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0}).format(v||0);
-}
-
 /* ─── sub-components ─── */
-function LedDot({ color = '#3dd457', pulse = false }) {
-  return (
-    <span style={{
-      display: 'inline-block',
-      width: 8, height: 8,
-      borderRadius: '50%',
-      background: color,
-      boxShadow: `0 0 6px ${color}, 0 0 12px ${color}60`,
-      flexShrink: 0,
-      animation: pulse ? 'ledPulse 1.2s ease-in-out infinite' : 'none',
-    }} />
-  );
-}
 
 function HwButton({ active, color, onClick, children, small }) {
   return (
@@ -124,7 +108,7 @@ function MonthBars({ shows }) {
     shows.filter(s => s.status === 'CONFIRMADO').forEach(s => {
       if (s.mes) map[s.mes] = (map[s.mes] || 0) + (s.cache || 0);
     });
-    return MESES.map((label, i) => ({ label, val: map[i + 1] || 0 }));
+    return MESES_ABREV.map((label, i) => ({ label, val: map[i + 1] || 0 }));
   }, [shows]);
   const max = Math.max(...dados.map(d => d.val), 1);
   return (
@@ -158,7 +142,7 @@ function MonthBars({ shows }) {
 
 /* ─── show card ─── */
 function ShowCard({ show, onEditar, onDelete, deletando }) {
-  const cor    = STATUS_COLOR[show.status] || '#9a7ef8';
+  const cor    = STATUS_COR[show.status] || '#9a7ef8';
   const bgCor  = STATUS_BG[show.status] || 'transparent';
   const label  = STATUS_LABELS[show.status] || show.status || 'SEM STATUS';
 
@@ -182,7 +166,7 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
       }}
     >
       {/* Status LED */}
-      <LedDot color={cor} pulse={show.status === 'PENDENTE'} />
+      <LedDot brilho={12} color={cor} pulse={show.status === 'PENDENTE'} />
 
       {/* Date block */}
       <div style={{
@@ -195,7 +179,7 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
           {show.data ? new Date(show.data + 'T00:00:00').getDate().toString().padStart(2, '0') : '—'}
         </div>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {show.mes ? MESES[show.mes - 1] : '—'} {show.ano ? String(show.ano).slice(2) : ''}
+          {show.mes ? MESES_ABREV[show.mes - 1] : '—'} {show.ano ? String(show.ano).slice(2) : ''}
         </div>
       </div>
 
@@ -400,7 +384,7 @@ export default function VisaoGeralPage({ shows: showsAll, loading, onEditar, onA
 
       {/* ── Page header ── */}
       <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <LedDot color="#9a7ef8" />
+        <LedDot brilho={12} color="#9a7ef8" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: 'rgba(154,126,248,0.7)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
             DECK 3 · SHOWS
@@ -640,7 +624,7 @@ export default function VisaoGeralPage({ shows: showsAll, loading, onEditar, onA
             <HwButton
               key={s}
               active={filtroStatus === s}
-              color={s === 'TODOS' ? '#9a7ef8' : STATUS_COLOR[s]}
+              color={s === 'TODOS' ? '#9a7ef8' : STATUS_COR[s]}
               onClick={() => setFiltroStatus(s)}
               small
             >

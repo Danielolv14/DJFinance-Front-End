@@ -1,19 +1,10 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+import { moedaComCentavos, dataBR, MESES } from '../utils/format';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
-function moeda(v) {
-  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
-}
 function moedaShort(v) {
   return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0}).format(v||0);
-}
-function fmtData(d) {
-  if (!d) return '—';
-  return d.toString().split('-').reverse().join('/');
 }
 function fmtDataShort(d) {
   if (!d) return '—';
@@ -325,21 +316,21 @@ export async function gerarPDFFechamento(dados, djConfig) {
   /* ── KPI Cards ── */
   y = sectionLine('PERFORMANCE FINANCEIRA', y);
   const cards = [
-    { label:'FATURAMENTO',   value: moeda(dados.totalBruto),   color: BLUE,
+    { label:'FATURAMENTO',   value: moedaComCentavos(dados.totalBruto),   color: BLUE,
       sub:'bruto total' },
-    { label:'LUCRO LÍQUIDO', value: moeda(dados.lucroLiquido), color: VERM,
+    { label:'LUCRO LÍQUIDO', value: moedaComCentavos(dados.lucroLiquido), color: VERM,
       sub:`${dados.totalBruto>0 ? Math.round((dados.lucroLiquido/dados.totalBruto)*100) : 0}% do bruto` },
-    { label:'DANIEL',        value: moeda(dados.totalDaniel),  color: ORANGE,
+    { label:'DANIEL',        value: moedaComCentavos(dados.totalDaniel),  color: ORANGE,
       sub:`${dados.totalBruto>0 ? Math.round((dados.totalDaniel/dados.totalBruto)*100) : 0}% do bruto` },
     ...(isBraichi
       ? (dados.totalProdutor > 0
-          ? [{ label:'PRODUTOR', value: moeda(dados.totalProdutor), color: PURPLE,
+          ? [{ label:'PRODUTOR', value: moedaComCentavos(dados.totalProdutor), color: PURPLE,
                sub:'cachê do produtor' }]
           : [])
-      : [{ label:'YURI', value: moeda(dados.totalYuri), color: PURPLE,
+      : [{ label:'YURI', value: moedaComCentavos(dados.totalYuri), color: PURPLE,
            sub:'R$250/show' }]),
     ...(dados.totalCustos > 0
-      ? [{ label:'CUSTOS', value: moeda(dados.totalCustos), color: RED,
+      ? [{ label:'CUSTOS', value: moedaComCentavos(dados.totalCustos), color: RED,
            sub:`${dados.totalBruto>0 ? Math.round((dados.totalCustos/dados.totalBruto)*100) : 0}% do bruto` }]
       : []),
   ];
@@ -399,7 +390,7 @@ export async function gerarPDFFechamento(dados, djConfig) {
       if (barW > 0.5) { doc.setFillColor(...clr); doc.roundedRect(barX, y, barW, BAR_H, 1.2, 1.2, 'F'); }
 
       doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...clr);
-      doc.text(moeda(s.cache||0), barX+BAR_MAX+VALUE_W, textY, { align:'right' });
+      doc.text(moedaComCentavos(s.cache||0), barX+BAR_MAX+VALUE_W, textY, { align:'right' });
       y += BAR_H + BAR_GAP;
     });
     y += 6;
@@ -418,11 +409,11 @@ export async function gerarPDFFechamento(dados, djConfig) {
     { header:'STATUS',       dataKey:'status'      },
   ];
   const rows = shows.map(s => ({
-    data:        fmtData(s.data),
+    data:        dataBR(s.data),
     evento:      s.evento       || '—',
     contratante: s.contratante  || '—',
-    cache:       s.cache        ? moeda(s.cache)  : '—',
-    ...(hasCustos ? { custos: s.custos ? moeda(s.custos) : '—' } : {}),
+    cache:       s.cache        ? moedaComCentavos(s.cache)  : '—',
+    ...(hasCustos ? { custos: s.custos ? moedaComCentavos(s.custos) : '—' } : {}),
     status:      s.status       || '—',
   }));
 

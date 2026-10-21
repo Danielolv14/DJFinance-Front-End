@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createShow, updateShow } from '../services/api';
 import useIsMobile from '../hooks/useIsMobile';
 import { useDJ } from '../context/DJContext';
+import { MESES } from '../utils/format';
+import { superficie } from '../utils/tema';
 
 /* ─── constants ─── */
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const STATUS_OPCOES = [
   { value: 'CONFIRMADO', label: 'CONFIRMADO', color: '#3dd457' },
@@ -53,17 +53,11 @@ function dataBloqueada(data, bloqueios) {
 
 /* ─── design tokens ─── */
 const ACCENT = '#ffd60a';
-const surface = {
-  background: '#13141a',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 8,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-};
 
 /* ─── sub-components ─── */
 function SectionPanel({ color, label, icon, children }) {
   return (
-    <div style={{ ...surface, padding: '20px 24px', borderTop: `2px solid ${color}` }}>
+    <div style={{ ...superficie, padding: '20px 24px', borderTop: `2px solid ${color}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
         <span style={{
           width: 7, height: 7, borderRadius: '50%', background: color,

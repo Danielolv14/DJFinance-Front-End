@@ -1,16 +1,11 @@
 import { useState } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
+import { superficie } from '../utils/tema';
 
 const DRIVE_URL = 'https://drive.google.com/drive/folders/1cy9qnDv1gPpuf8_9qlKAW4AlHaxAOrmD';
 const EMBED_URL = 'https://drive.google.com/embeddedfolderview?id=1cy9qnDv1gPpuf8_9qlKAW4AlHaxAOrmD#list';
 
 const ACCENT  = '#22d3ee';
-const surface = {
-  background: '#13141a',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 8,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-};
 
 export default function PressKitPage() {
   const isMobile       = useIsMobile();
@@ -76,7 +71,7 @@ export default function PressKitPage() {
 
       {/* ── Drive iframe card ── */}
       <div style={{
-        ...surface,
+        ...superficie,
         borderTop:`2px solid ${ACCENT}`,
         overflow:'hidden',
       }}>

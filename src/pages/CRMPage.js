@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStatsContratantes, getStatsLocais, normalizarLocal, normalizarContratante } from '../services/api';
 import useIsMobile from '../hooks/useIsMobile';
+import { moeda } from '../utils/format';
+import { superficie } from '../utils/tema';
+import LedDot from '../components/LedDot';
 
 /* ─── helpers ─── */
-function moeda(v) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(v || 0);
-}
 function normalizar(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim();
 }
@@ -22,22 +22,6 @@ function detectarDuplicatas(lista) {
 
 /* ─── design tokens ─── */
 const ACCENT = '#ff8040';
-const surface = {
-  background: '#13141a',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 8,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-};
-
-function LedDot({ color, size = 8 }) {
-  return (
-    <span style={{
-      display: 'inline-block', width: size, height: size,
-      borderRadius: '50%', background: color, flexShrink: 0,
-      boxShadow: `0 0 6px ${color}, 0 0 10px ${color}60`,
-    }} />
-  );
-}
 
 /* ─── Modal base ─── */
 function ModalBase({ onClose, children }) {
@@ -61,7 +45,7 @@ function ModalBase({ onClose, children }) {
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         onClick={e => e.stopPropagation()}
         style={{
-          ...surface,
+          ...superficie,
           borderTop: `2px solid ${ACCENT}`,
           padding: 24,
           width: 440,
@@ -341,7 +325,7 @@ export default function CRMPage({ shows }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.07 }}
-            style={{ ...surface, padding: '14px 18px', borderTop: `2px solid ${k.color}` }}
+            style={{ ...superficie, padding: '14px 18px', borderTop: `2px solid ${k.color}` }}
           >
             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.15em', marginBottom: 6 }}>{k.label}</div>
             <div style={{
@@ -364,7 +348,7 @@ export default function CRMPage({ shows }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             style={{
-              ...surface,
+              ...superficie,
               borderTop: '2px solid #ffd60a',
               padding: '14px 18px', marginBottom: 16,
             }}
@@ -472,7 +456,7 @@ export default function CRMPage({ shows }) {
           CARREGANDO···
         </div>
       ) : dadosFiltrados.length === 0 ? (
-        <div style={{ ...surface, padding: '48px 32px', textAlign: 'center' }}>
+        <div style={{ ...superficie, padding: '48px 32px', textAlign: 'center' }}>
           <div style={{ fontSize: 28, opacity: 0.15, marginBottom: 10 }}>◎</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em' }}>NENHUM DADO ENCONTRADO</div>
         </div>
@@ -487,7 +471,7 @@ export default function CRMPage({ shows }) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03, duration: 0.25 }}
                 style={{
-                  ...surface,
+                  ...superficie,
                   padding: '14px 18px',
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}
