@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStatsContratantes, getStatsLocais, normalizarLocal, normalizarContratante } from '../services/api';
-import useIsMobile from '../hooks/useIsMobile';
-import { moeda } from '../utils/format';
-import { superficie } from '../utils/tema';
-import LedDot from '../components/LedDot';
+import { getStatsContratantes, getStatsLocais, normalizarLocal, normalizarContratante } from '../../services/api';
+import useIsMobile from '../../hooks/useIsMobile';
+import { moeda } from '../../utils/format';
+import { superficie, COR_ABA } from '../../utils/tema';
+import LedDot from '../../components/LedDot';
 
 /* ─── helpers ─── */
 function normalizar(s) {
@@ -21,7 +21,7 @@ function detectarDuplicatas(lista) {
 }
 
 /* ─── design tokens ─── */
-const ACCENT = '#ff8040';
+const ACCENT = COR_ABA.crm;
 
 /* ─── Modal base ─── */
 function ModalBase({ onClose, children }) {

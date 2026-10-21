@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createBloqueio, deleteBloqueio } from '../services/api';
+import { createBloqueio, deleteBloqueio } from '../../services/api';
 
 export default function BloqueioAgenda({ bloqueios, onAtualizar }) {
   const [form, setForm] = useState({ dataInicio: '', dataFim: '', motivo: '' });

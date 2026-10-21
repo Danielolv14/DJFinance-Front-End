@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DJ_CONFIG, useDJ } from '../context/DJContext';
+import { DJ_CONFIG, useDJ } from '../../context/DJContext';
 
 export default function SelectDJPage() {
   const { login } = useDJ();

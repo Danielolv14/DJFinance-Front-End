@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { useDJ } from '../context/DJContext';
-import { pagamentoDaniel, pagamentoYuri } from '../utils/pagamentos';
+import { useDJ } from '../../context/DJContext';
+import { pagamentoDaniel, pagamentoYuri } from '../../utils/pagamentos';
 import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, Clock, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import WaveformChart    from '../components/xdj/WaveformChart';
-import PerformanceRadar from '../components/xdj/PerformanceRadar';
-import { moeda, MESES, MESES_ABREV } from '../utils/format';
+import WaveformChart from './WaveformChart';
+import PerformanceRadar from './PerformanceRadar';
+import { moeda, MESES, MESES_ABREV } from '../../utils/format';
 
 /* ───────────────── helpers ───────────────── */
 

@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { deleteShow } from '../services/api';
-import { exportarShows } from '../services/excelService';
-import ItinerarioModal from '../components/ItinerarioModal';
-import { usePlanilhaUrl } from '../components/PlanilhaOnlineModal';
-import useIsMobile from '../hooks/useIsMobile';
-import { useDJ } from '../context/DJContext';
-import { moeda, MESES_ABREV } from '../utils/format';
-import { STATUS_COR } from '../utils/tema';
-import LedDot from '../components/LedDot';
+import { deleteShow } from '../../services/api';
+import { exportarShows } from '../../services/excelService';
+import ItinerarioModal from './ItinerarioModal';
+import { usePlanilhaUrl } from './PlanilhaOnlineModal';
+import useIsMobile from '../../hooks/useIsMobile';
+import { useDJ } from '../../context/DJContext';
+import { moeda, MESES_ABREV } from '../../utils/format';
+import { STATUS_COR } from '../../utils/tema';
+import LedDot from '../../components/LedDot';
 
 /* ─── constants ─── */
 
@@ -301,7 +301,7 @@ function ShowCard({ show, onEditar, onDelete, deletando }) {
 }
 
 /* ═══════════════ PAGE ═══════════════ */
-export default function VisaoGeralPage({ shows: showsAll, loading, onEditar, onAtualizar }) {
+export default function ShowsPage({ shows: showsAll, loading, onEditar, onAtualizar }) {
   const shows = showsAll.filter(s => !s.data || parseInt(s.data.substring(0, 4), 10) >= 2025);
   const isMobile = useIsMobile();
   const [busca,         setBusca]        = useState('');

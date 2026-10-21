@@ -1,28 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
-import CadastroPage    from './pages/CadastroPage';
-import VisaoGeralPage  from './pages/VisaoGeralPage';
-import DashboardPage   from './pages/DashboardPage';
-import CalendarioPage  from './pages/CalendarioPage';
-import CRMPage         from './pages/CRMPage';
-import PressKitPage    from './pages/PressKitPage';
-import SelectDJPage    from './pages/SelectDJPage';
-import FechamentoMensal from './components/FechamentoMensal';
-import ImportarCSV     from './components/ImportarCSV';
+import CadastroPage from './pages/cadastro/CadastroPage';
+import ShowsPage from './pages/shows/ShowsPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
+import CalendarioPage from './pages/calendario/CalendarioPage';
+import CRMPage from './pages/crm/CRMPage';
+import PressKitPage from './pages/presskit/PressKitPage';
+import SelectDJPage from './pages/selecao-dj/SelectDJPage';
+import FechamentoPage from './pages/fechamento/FechamentoPage';
+import ImportarCSV from './pages/cadastro/ImportarCSV';
 import { getShows, getBloqueios } from './services/api';
 import { MOCK_SHOWS, getMockFechamento } from './mockData';
 import { DJProvider, useDJ } from './context/DJContext';
 import useIsMobile from './hooks/useIsMobile';
 import { IS_DEMO } from './utils/demo';
+import { COR_ABA } from './utils/tema';
 import './App.css';
 
 const ABAS = [
-  { id:'dashboard',  label:'Dashboard',  color:'#4d8fff', shortcut:'F1' },
-  { id:'calendario', label:'Calendário', color:'#3dd457', shortcut:'F2' },
-  { id:'visao',      label:'Shows',      color:'#9a7ef8', shortcut:'F3' },
-  { id:'crm',        label:'CRM',        color:'#ff8040', shortcut:'F4' },
-  { id:'cadastro',   label:'Cadastrar',  color:'#ffd60a', shortcut:'F5' },
-  { id:'fechamento', label:'Fechamento', color:'#ff6058', shortcut:'F6' },
-  { id:'presskit',   label:'Press Kit',  color:'#22d3ee', shortcut:'F7' },
+  { id:'dashboard',  label:'Dashboard',  color: COR_ABA.dashboard,  shortcut:'F1' },
+  { id:'calendario', label:'Calendário', color: COR_ABA.calendario, shortcut:'F2' },
+  { id:'shows',      label:'Shows',      color: COR_ABA.shows,      shortcut:'F3' },
+  { id:'crm',        label:'CRM',        color: COR_ABA.crm,        shortcut:'F4' },
+  { id:'cadastro',   label:'Cadastrar',  color: COR_ABA.cadastro,   shortcut:'F5' },
+  { id:'fechamento', label:'Fechamento', color: COR_ABA.fechamento, shortcut:'F6' },
+  { id:'presskit',   label:'Press Kit',  color: COR_ABA.presskit,   shortcut:'F7' },
 ];
 
 export default function App() {
@@ -133,7 +134,7 @@ function AppInner() {
                 <span className="nav-led" />
                 <span className="nav-label">{a.label}</span>
                 {!isMobile && <span className="nav-shortcut">{a.shortcut}</span>}
-                {a.id === 'visao' && shows.length > 0 && (
+                {a.id === 'shows' && shows.length > 0 && (
                   <span className="nav-badge">{shows.length}</span>
                 )}
               </button>
@@ -193,8 +194,8 @@ function AppInner() {
       <main className="main">
         {aba === 'dashboard'  && <DashboardPage  shows={shows} />}
         {aba === 'calendario' && <CalendarioPage shows={shows} bloqueios={bloqueios} onBloqueioAtualizado={carregarBloqueios} />}
-        {aba === 'visao'      && (
-          <VisaoGeralPage shows={shows} loading={loading}
+        {aba === 'shows'      && (
+          <ShowsPage shows={shows} loading={loading}
             onEditar={handleEditar} onAtualizar={carregarShows} />
         )}
         {aba === 'crm'        && <CRMPage shows={shows} />}
@@ -212,7 +213,7 @@ function AppInner() {
             />
           </>
         )}
-        {aba === 'fechamento' && <FechamentoMensal mockFechamento={IS_DEMO ? getMockFechamento : null} />}
+        {aba === 'fechamento' && <FechamentoPage mockFechamento={IS_DEMO ? getMockFechamento : null} />}
         {aba === 'presskit'   && <PressKitPage />}
       </main>
     </div>

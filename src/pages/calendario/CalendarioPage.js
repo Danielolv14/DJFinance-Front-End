@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import BloqueioAgenda from '../components/BloqueioAgenda';
-import useIsMobile from '../hooks/useIsMobile';
-import { moeda, MESES, MESES_ABREV } from '../utils/format';
-import { superficie, STATUS_COR } from '../utils/tema';
-import LedDot from '../components/LedDot';
+import BloqueioAgenda from './BloqueioAgenda';
+import useIsMobile from '../../hooks/useIsMobile';
+import { moeda, MESES, MESES_ABREV } from '../../utils/format';
+import { superficie, STATUS_COR } from '../../utils/tema';
+import LedDot from '../../components/LedDot';
 
 /* ─── constants ─── */
 const MESES_ABR = MESES_ABREV.map(m => m.toUpperCase());

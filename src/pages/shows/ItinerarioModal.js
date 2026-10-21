@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useDJ } from '../context/DJContext';
-import { MESES } from '../utils/format';
+import { useDJ } from '../../context/DJContext';
+import { MESES } from '../../utils/format';
+import { COR_ABA } from '../../utils/tema';
 
 /* ──────────────────── helpers ──────────────────── */
 const DIAS_SEMANA = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira',
@@ -308,7 +309,7 @@ function openPDF(showsByDate, extras, djNome) {
 }
 
 /* ──────────────────── design tokens ──────────────────── */
-const ACCENT = '#9a7ef8';
+const ACCENT = COR_ABA.shows;
 const surface = {
   background: '#13141a',
   border: '1px solid rgba(255,255,255,0.07)',

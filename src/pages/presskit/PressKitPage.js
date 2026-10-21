@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import useIsMobile from '../hooks/useIsMobile';
-import { superficie } from '../utils/tema';
+import useIsMobile from '../../hooks/useIsMobile';
+import { superficie, COR_ABA } from '../../utils/tema';
 
 const DRIVE_URL = 'https://drive.google.com/drive/folders/1cy9qnDv1gPpuf8_9qlKAW4AlHaxAOrmD';
 const EMBED_URL = 'https://drive.google.com/embeddedfolderview?id=1cy9qnDv1gPpuf8_9qlKAW4AlHaxAOrmD#list';
 
-const ACCENT  = '#22d3ee';
+const ACCENT = COR_ABA.presskit;
 
 export default function PressKitPage() {
   const isMobile       = useIsMobile();

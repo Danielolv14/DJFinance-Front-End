@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getFechamento } from '../services/api';
-import { gerarPDFFechamento } from '../services/pdfService';
-import useIsMobile from '../hooks/useIsMobile';
-import { useDJ } from '../context/DJContext';
-import { moeda, dataBR, MESES } from '../utils/format';
-import { superficie, STATUS_COR } from '../utils/tema';
+import { getFechamento } from '../../services/api';
+import { gerarPDFFechamento } from '../../services/pdfService';
+import useIsMobile from '../../hooks/useIsMobile';
+import { useDJ } from '../../context/DJContext';
+import { moeda, dataBR, MESES } from '../../utils/format';
+import { superficie, STATUS_COR, COR_ABA } from '../../utils/tema';
 
 /* ─── constants ─── */
 const MESES_OPCOES = MESES.map((label, i) => ({ value: i + 1, label: label.toUpperCase() }));
 
-const ACCENT = '#ff6058';
+const ACCENT = COR_ABA.fechamento;
 
 function abrirMaps(endereco) {
   if (!endereco) return;
@@ -103,7 +103,7 @@ function gerarMsgWPP(dados, nomeMes, ano, djNome, isBraichi, imposto) {
   return lines.join('\n');
 }
 
-export default function FechamentoMensal({ mockFechamento }) {
+export default function FechamentoPage({ mockFechamento }) {
   const isMobile = useIsMobile();
   const { djConfig } = useDJ();
   const isBraichi = djConfig?.id === 'BRAICHI';

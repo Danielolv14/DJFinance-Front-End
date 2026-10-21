@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createShow, updateShow } from '../services/api';
-import useIsMobile from '../hooks/useIsMobile';
-import { useDJ } from '../context/DJContext';
-import { MESES } from '../utils/format';
-import { superficie } from '../utils/tema';
+import { createShow, updateShow } from '../../services/api';
+import useIsMobile from '../../hooks/useIsMobile';
+import { useDJ } from '../../context/DJContext';
+import { MESES } from '../../utils/format';
+import { superficie, COR_ABA, STATUS_COR } from '../../utils/tema';
 
 /* ─── constants ─── */
-
-const STATUS_OPCOES = [
-  { value: 'CONFIRMADO', label: 'CONFIRMADO', color: '#3dd457' },
-  { value: 'PENDENTE',   label: 'PENDENTE',   color: '#ffd60a' },
-  { value: 'CANCELADO',  label: 'CANCELADO',  color: '#ff453a' },
-];
+const STATUS_OPCOES = ['CONFIRMADO', 'PENDENTE', 'CANCELADO'].map(s => ({ value: s, label: s, color: STATUS_COR[s] }));
 
 const VAZIO = {
   nome:'', data:'', ano: new Date().getFullYear(), mes: new Date().getMonth()+1,
@@ -52,7 +47,7 @@ function dataBloqueada(data, bloqueios) {
 }
 
 /* ─── design tokens ─── */
-const ACCENT = '#ffd60a';
+const ACCENT = COR_ABA.cadastro;
 
 /* ─── sub-components ─── */
 function SectionPanel({ color, label, icon, children }) {

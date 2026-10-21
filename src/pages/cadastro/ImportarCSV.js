@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { importarCSV, removerDuplicados } from '../services/api';
+import { importarCSV, removerDuplicados } from '../../services/api';
 
 export default function ImportarCSV({ onImportado }) {
   const [loading,    setLoading]    = useState(false);
