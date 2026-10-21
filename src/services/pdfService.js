@@ -1,11 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { moedaComCentavos, dataBR, MESES } from '../utils/format';
+import { moeda, moedaComCentavos, dataBR, MESES } from '../utils/format';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
-function moedaShort(v) {
-  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:0}).format(v||0);
-}
 function fmtDataShort(d) {
   if (!d) return '—';
   const parts = d.toString().split('-');
@@ -236,7 +233,7 @@ export async function gerarPDFFechamento(dados, djConfig) {
 
     // Cachê badge right side
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...YELLOW);
-    doc.text(moedaShort(destaque.cache), W-MARGIN, y+9, { align:'right' });
+    doc.text(moeda(destaque.cache), W-MARGIN, y+9, { align:'right' });
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...FG3);
     doc.text('maior cachê do mês', W-MARGIN, y+15.5, { align:'right' });
     y += dH + 8;
@@ -343,11 +340,11 @@ export async function gerarPDFFechamento(dados, djConfig) {
   /* ── Ticket Médio + Maior Cachê ── */
   y = sectionLine('DETALHES', y);
   const extras = [
-    { label:'TICKET MÉDIO', value: moedaShort(ticketMedio), sub:'média por show', color: BLUE },
-    { label:'MAIOR CACHÊ',  value: moedaShort(destaque?.cache||0),
+    { label:'TICKET MÉDIO', value: moeda(ticketMedio), sub:'média por show', color: BLUE },
+    { label:'MAIOR CACHÊ',  value: moeda(destaque?.cache||0),
       sub:(destaque?.evento||'').substring(0,22), color: YELLOW },
     ...(dados.totalImpostos > 0
-      ? [{ label:'IMPOSTOS', value: moedaShort(dados.totalImpostos),
+      ? [{ label:'IMPOSTOS', value: moeda(dados.totalImpostos),
            sub:`${dados.totalBruto>0?Math.round(dados.totalImpostos/dados.totalBruto*100):0}% do bruto`,
            color: RED }]
       : []),
