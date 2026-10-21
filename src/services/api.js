@@ -57,12 +57,6 @@ export async function getStatsLocais() {
   return res.json();
 }
 
-export async function getProjecao() {
-  const res = await fetch(`${BASE_URL}/stats/projecao?dj=${getDJ()}`);
-  if (!res.ok) throw new Error('Erro ao buscar projeção');
-  return res.json();
-}
-
 export async function getBloqueios() {
   const res = await fetch(`${BASE_URL}/bloqueios?dj=${getDJ()}`);
   if (!res.ok) throw new Error('Erro ao buscar bloqueios');
