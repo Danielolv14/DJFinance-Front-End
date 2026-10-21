@@ -63,7 +63,7 @@ function AppInner() {
   }, []);
 
   useEffect(() => {
-    if (!djAtivo) return;
+    if (!djAtivo && !IS_DEMO) return;
     setShows([]);
     setBloqueios([]);
     setShowParaEditar(null);
