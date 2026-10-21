@@ -1,6 +1,3 @@
-/* XDJ Console Theme — CSS Variables & Custom Utilities */
-/* Tailwind classes are loaded via CDN in public/index.html */
-
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -45,34 +42,6 @@ body {
 /* ── Custom utility classes (non-Tailwind) ── */
 .font-display { font-family: var(--font-display); }
 
-.texture-carbon::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.07;
-  background-image:
-    repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(255,255,255,0.08) 1px, rgba(255,255,255,0.08) 2px),
-    repeating-linear-gradient(-45deg, transparent, transparent 1px, rgba(255,255,255,0.04) 1px, rgba(255,255,255,0.04) 2px);
-  background-size: 4px 4px;
-}
-
-.texture-brushed::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.04;
-  background-image: repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.3) 1px, rgba(255,255,255,0.3) 2px);
-  background-size: 3px 100%;
-}
-
-.surface-anodized {
-  background: linear-gradient(180deg, hsl(220 10% 11%) 0%, hsl(220 10% 8%) 50%, hsl(220 12% 6%) 100%);
-}
-
 .lcd-cavity {
   background: hsl(220 14% 3.5%);
   box-shadow:
@@ -91,39 +60,7 @@ body {
   background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.015) 100%);
 }
 
-/* LED colors */
-.text-led-green  { color: hsl(150 70% 45%); }
-.text-led-blue   { color: hsl(217 90% 55%); }
-.text-led-orange { color: hsl(30 95% 55%); }
-.bg-led-green    { background-color: hsl(150 70% 45%); }
-.bg-led-orange   { background-color: hsl(30 95% 55%); }
-
 /* ── Animations ── */
-@keyframes vu-pulse {
-  0%, 100% { opacity: 1; filter: brightness(1); }
-  50%       { opacity: 0.85; filter: brightness(1.15); }
-}
-.vu-seg-pulse { animation: vu-pulse 1.5s ease-in-out infinite; }
-
-@keyframes knob-breathe {
-  0%, 100% { transform: rotate(0deg); }
-  25%       { transform: rotate(1.5deg); }
-  75%       { transform: rotate(-1.5deg); }
-}
-.knob-live { animation: knob-breathe 3s ease-in-out infinite; }
-
-@keyframes led-flicker {
-  0%, 100% { opacity: 1; } 92% { opacity: 1; }
-  93% { opacity: 0.6; }   94% { opacity: 1; }
-  96% { opacity: 0.7; }   97% { opacity: 1; }
-}
-.led-flicker { animation: led-flicker 4s ease-in-out infinite; }
-
-@keyframes led-ping {
-  0%   { transform: scale(1); opacity: 0.3; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-.led-ping { animation: led-ping 1.8s ease-out infinite; }
 
 @keyframes ledPulse {
   0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor, 0 0 12px currentColor; }
