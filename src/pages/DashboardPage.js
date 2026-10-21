@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useDJ } from '../context/DJContext';
+import { pagamentoDaniel, pagamentoYuri } from '../utils/pagamentos';
 import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, Clock, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -19,29 +20,6 @@ function moedaK(v) {
 }
 function pct(num, den) {
   return den > 0 ? Math.round((num / den) * 100) : 0;
-}
-
-/* ───────────────── business rules ───────────────── */
-const INICIO_EQUIPE            = new Date('2025-03-01');
-const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
-const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
-
-function calcDaniel(show) {
-  const d = new Date(show.data + 'T00:00:00');
-  if (d < INICIO_EQUIPE) return 0;
-  if (show.semCacheDaniel) return show.cache > 0 ? show.cache * 0.10 : 0; // sem cachê: só 10% do bruto, sem transporte
-  if (d < INICIO_PERCENTUAL_DANIEL) return 50;
-  if (!(show.cache > 0)) return 70 + 40;
-  const p = d < INICIO_PERCENTUAL_20 ? 0.10 : 0.20;
-  const base = show.cache - (show.custos || 0);
-  return (base > 0 ? base * p : 0) + 40;
-}
-function calcDanielBraichi(show) {
-  return (show.cache > 0) ? show.cache * 0.10 : 0;
-}
-function calcYuri(show) {
-  if (show.semCacheYuri) return 0;
-  return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 250;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -345,7 +323,6 @@ function DistRow({ label, value, total, color }) {
 export default function DashboardPage({ shows }) {
   const { djConfig } = useDJ();
   const isBraichi = djConfig?.id === 'BRAICHI';
-  const calcD = s => isBraichi ? calcDanielBraichi(s) : calcDaniel(s);
   const hoje     = new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth() + 1;
@@ -361,8 +338,8 @@ export default function DashboardPage({ shows }) {
   /* KPIs anuais */
   const totalBruto   = confirmados.reduce((a,s) => a + (s.cache   || 0), 0);
   const totalCustos  = confirmados.reduce((a,s) => a + (s.custos  || 0), 0);
-  const totalDaniel  = confirmados.reduce((a,s) => a + calcD(s),          0);
-  const totalYuri    = isBraichi ? 0 : confirmados.reduce((a,s) => a + calcYuri(s), 0);
+  const totalDaniel  = confirmados.reduce((a,s) => a + pagamentoDaniel(s),          0);
+  const totalYuri    = confirmados.reduce((a,s) => a + pagamentoYuri(s), 0);
   const lucroLiquido = totalBruto - totalDaniel - totalYuri - totalCustos;
   const aReceber     = pendentes.reduce((a,s) => a + (s.cache || 0), 0);
 
@@ -372,10 +349,10 @@ export default function DashboardPage({ shows }) {
     confirmados.forEach(s => {
       if (!s.mes) return;
       cm[s.mes - 1] += (s.cache || 0);
-      lm[s.mes - 1] += Math.max((s.cache||0) - calcD(s) - (isBraichi ? 0 : calcYuri(s)) - (s.custos||0), 0);
+      lm[s.mes - 1] += Math.max((s.cache||0) - pagamentoDaniel(s) - pagamentoYuri(s) - (s.custos||0), 0);
     });
     return MESES_LABEL.map((label, i) => ({ label, valor: Math.round(cm[i]), lucro: Math.round(lm[i]) }));
-  }, [confirmados, isBraichi]);
+  }, [confirmados]);
 
   /* Dados do mês selecionado */
   const showsMes = useMemo(() =>
@@ -383,8 +360,8 @@ export default function DashboardPage({ shows }) {
 
   const mesBruto   = showsMes.reduce((a,s) => a + (s.cache  || 0), 0);
   const mesCustos  = showsMes.reduce((a,s) => a + (s.custos || 0), 0);
-  const mesDaniel  = showsMes.reduce((a,s) => a + calcD(s),      0);
-  const mesYuri    = isBraichi ? 0 : showsMes.reduce((a,s) => a + calcYuri(s), 0);
+  const mesDaniel  = showsMes.reduce((a,s) => a + pagamentoDaniel(s),      0);
+  const mesYuri    = showsMes.reduce((a,s) => a + pagamentoYuri(s), 0);
   const mesLucro   = mesBruto - mesDaniel - mesYuri - mesCustos;
   const mesShows   = showsMes.length;
   const mesMedia   = mesShows > 0 ? mesBruto / mesShows : 0;
@@ -694,7 +671,7 @@ export default function DashboardPage({ shows }) {
 
           <div className="space-y-4">
             <DistRow label="Lucro DJ"          value={Math.max(lucroLiquido,0)} total={totalBruto} color="hsl(217 90% 55%)" />
-            <DistRow label={`Daniel (${new Date() >= INICIO_PERCENTUAL_20 ? '20' : '10'}%)`} value={totalDaniel} total={totalBruto} color="hsl(30 95% 55%)" />
+            <DistRow label={`Daniel (${isBraichi ? '10' : '20'}%)`} value={totalDaniel} total={totalBruto} color="hsl(30 95% 55%)" />
             {!isBraichi && <DistRow label="Yuri (R$250/set)" value={totalYuri} total={totalBruto} color="hsl(150 70% 45%)" />}
             <DistRow label="Custos Op."          value={totalCustos} total={totalBruto} color="hsl(0 75% 55%)" />
           </div>

@@ -4,28 +4,8 @@
    Carregado via dynamic import para não impactar o bundle inicial
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Regras financeiras (idênticas ao DashboardPage) ── */
-const INICIO_EQUIPE            = new Date('2025-03-01');
-const INICIO_PERCENTUAL_DANIEL = new Date('2026-01-01');
-const INICIO_PERCENTUAL_20     = new Date('2026-04-01');
+import { pagamentoDaniel, pagamentoYuri } from '../utils/pagamentos';
 
-function calcDaniel(show) {
-  const d = new Date(show.data + 'T00:00:00');
-  if (d < INICIO_EQUIPE) return 0;
-  if (show.semCacheDaniel) return show.cache > 0 ? show.cache * 0.10 : 0; // sem cachê: só 10% do bruto, sem transporte
-  if (d < INICIO_PERCENTUAL_DANIEL) return 50;
-  if (!(show.cache > 0)) return 70 + 40; // sem cachê definido → R$70 + transporte
-  const p    = d < INICIO_PERCENTUAL_20 ? 0.10 : 0.20;
-  const base = show.cache - (show.custos || 0);
-  return (base > 0 ? base * p : 0) + 40;
-}
-function calcDanielBraichi(show) {
-  return (show.cache > 0) ? show.cache * 0.10 : 0;
-}
-function calcYuri(show) {
-  if (show.semCacheYuri) return 0;
-  return new Date(show.data + 'T00:00:00') < INICIO_EQUIPE ? 0 : 250;
-}
 function fmtData(d) {
   if (!d) return '—';
   return d.split('-').reverse().join('/');
@@ -97,8 +77,6 @@ export async function exportarShows(shows, djConfig) {
   const djId    = (djConfig?.id || 'DRUDS');
   const djBrand = djId.charAt(0) + djId.slice(1).toLowerCase(); // Druds / Braichi
   const isBraichi = djId === 'BRAICHI';
-  const calcD   = isBraichi ? calcDanielBraichi : calcDaniel;
-  const calcY   = isBraichi ? () => 0 : calcYuri;
 
   const wb      = new ExcelJS.Workbook();
   wb.creator    = `${djBrand} Financeiro`;
@@ -151,8 +129,8 @@ export async function exportarShows(shows, djConfig) {
   const sorted = [...shows].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 
   sorted.forEach((show, idx) => {
-    const daniel = calcD(show);
-    const yuri   = calcY(show);
+    const daniel = pagamentoDaniel(show);
+    const yuri   = pagamentoYuri(show);
     const lucro  = (show.cache || 0) - daniel - yuri - (show.custos || 0);
     const isEven = idx % 2 === 0;
     const bg     = { argb: isEven ? C.WHITE : C.GREY_L };
@@ -284,8 +262,8 @@ export async function exportarShows(shows, djConfig) {
     const sm  = showsAno.filter(s => s.mes === mesNum);
     const fat = sm.reduce((a, s) => a + (s.cache  || 0), 0);
     const cus = sm.reduce((a, s) => a + (s.custos || 0), 0);
-    const dan = sm.reduce((a, s) => a + calcD(s),   0);
-    const yur = sm.reduce((a, s) => a + calcY(s),     0);
+    const dan = sm.reduce((a, s) => a + pagamentoDaniel(s),   0);
+    const yur = sm.reduce((a, s) => a + pagamentoYuri(s),     0);
     const luc = fat - cus - dan - yur;
     const mar = fat > 0 ? luc / fat : 0;
 
