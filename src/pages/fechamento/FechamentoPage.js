@@ -6,6 +6,8 @@ import useIsMobile from '../../hooks/useIsMobile';
 import { useDJ } from '../../context/DJContext';
 import { moeda, dataBR, MESES } from '../../utils/format';
 import { superficie, STATUS_COR, COR_ABA } from '../../utils/tema';
+import { gerarMsgWPP } from './mensagemWhatsApp';
+import ResultCard from './ResultCard';
 
 /* ─── constants ─── */
 const MESES_OPCOES = MESES.map((label, i) => ({ value: i + 1, label: label.toUpperCase() }));
@@ -25,83 +27,6 @@ const inputStyle = {
   fontFamily: "'JetBrains Mono', monospace",
   fontSize: 12, padding: '10px 12px', outline: 'none',
 };
-
-function ResultCard({ label, val, color, detail, large }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        ...superficie,
-        padding: '16px 20px',
-        borderTop: `2px solid ${color}`,
-        flex: large ? 2 : 1,
-        minWidth: 140,
-      }}
-    >
-      <div style={{
-        fontSize: 9, color: 'rgba(255,255,255,0.25)',
-        letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 8,
-      }}>
-        {label}
-      </div>
-      <div style={{
-        fontFamily: "'JetBrains Mono', monospace",
-        fontSize: large ? 22 : 18, fontWeight: 700,
-        color, textShadow: `0 0 16px ${color}60`,
-        lineHeight: 1,
-      }}>
-        {val}
-      </div>
-      {detail && (
-        <div style={{
-          marginTop: 5, fontSize: 9,
-          color: 'rgba(255,255,255,0.25)', letterSpacing: '0.06em',
-        }}>
-          {detail}
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
-function gerarMsgWPP(dados, nomeMes, ano, djNome, isBraichi, imposto) {
-  const sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-  const fmtDDMM = d => {
-    if (!d) return '—';
-    const p = d.toString().split('-');
-    return `${p[2]}/${p[1]}`;
-  };
-  const lines = [
-    sep,
-    `🎧 *FECHAMENTO MENSAL — ${djNome.toUpperCase()} DJ*`,
-    `📅 *${nomeMes} / ${ano}*`,
-    sep,
-    `*${dados.quantidadeShows} show${dados.quantidadeShows !== 1 ? 's' : ''} realizado${dados.quantidadeShows !== 1 ? 's' : ''}*`,
-    '',
-    '📋 *SHOWS DO MÊS:*',
-  ];
-  dados.shows.forEach((s, i) => {
-    const local = s.endereco || s.contratante || '—';
-    const cache = s.cache ? moeda(s.cache) : 'A definir';
-    lines.push(`*${i + 1}. ${(s.evento || '—').toUpperCase()}* — ${fmtDDMM(s.data)} / 📍 ${local} · ${cache}`);
-  });
-  lines.push('');
-  lines.push('💰 *RESUMO FINANCEIRO:*');
-  lines.push(`💵 Total Bruto: *${moeda(dados.totalBruto)}*`);
-  if (isBraichi) {
-    lines.push(`🎛️ Daniel (10%): *${moeda(dados.totalDaniel)}*`);
-    if (dados.totalProdutor > 0) lines.push(`🎚️ Produtor: *${moeda(dados.totalProdutor)}*`);
-  } else {
-    lines.push(`👤 Daniel: *${moeda(dados.totalDaniel)}*`);
-    if (dados.totalYuri > 0) lines.push(`👤 Yuri: *${moeda(dados.totalYuri)}*`);
-  }
-  if (dados.totalCustos > 0) lines.push(`📦 Outros Custos: *${moeda(dados.totalCustos)}*`);
-  if (dados.totalImpostos > 0) lines.push(`🧾 Impostos (${imposto}%): *${moeda(dados.totalImpostos)}*`);
-  lines.push(`✅ *Lucro Líquido: ${moeda(dados.lucroLiquido)}*`);
-  lines.push(sep);
-  return lines.join('\n');
-}
 
 export default function FechamentoPage({ mockFechamento }) {
   const isMobile = useIsMobile();
