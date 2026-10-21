@@ -1,99 +1,82 @@
-const BASE_URL = 'https://djfinance-back-end-production.up.railway.app';
+/* Todas as chamadas ao back-end. O DJ ativo vai em cada requisição (?dj=).
+   No modo demonstração nada chega ao servidor: o CRM usa dados fictícios e o resto falha com aviso. */
 
-function getDJ() {
+import { IS_DEMO } from '../utils/demo';
+import { getMockStatsContratantes, getMockStatsLocais } from '../mockData';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://djfinance-back-end-production.up.railway.app';
+
+function djAtivo() {
   return localStorage.getItem('djAtivo') || 'DRUDS';
 }
 
-export async function getShows() {
-  const res = await fetch(`${BASE_URL}/shows?dj=${getDJ()}`);
-  if (!res.ok) throw new Error('Erro ao buscar shows');
-  return res.json();
+/** Faz a requisição; em erro, usa a mensagem do back quando existir. */
+async function requisitar(caminho, mensagemErro, opcoes) {
+  if (IS_DEMO) throw new Error('Modo demonstração: nada é salvo no servidor.');
+  const res = await fetch(`${BASE_URL}${caminho}`, opcoes);
+  if (!res.ok) {
+    const corpo = await res.json().catch(() => ({}));
+    throw new Error(corpo.mensagem || mensagemErro);
+  }
+  return res.status === 204 ? null : res.json();
 }
 
-export async function createShow(show) {
-  const payload = { ...show, dj: getDJ() };
-  const res = await fetch(`${BASE_URL}/shows`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.mensagem || 'Erro ao cadastrar show'); }
-  return res.json();
+const comJson = (method, dados) => ({
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(dados),
+});
+
+/* ── Shows ── */
+export const getShows = () =>
+  requisitar(`/shows?dj=${djAtivo()}`, 'Erro ao buscar shows');
+
+export const createShow = show =>
+  requisitar('/shows', 'Erro ao cadastrar show', comJson('POST', { ...show, dj: djAtivo() }));
+
+export const updateShow = (id, show) =>
+  requisitar(`/shows/${id}`, 'Erro ao atualizar show', comJson('PUT', { ...show, dj: djAtivo() }));
+
+export const deleteShow = id =>
+  requisitar(`/shows/${id}`, 'Erro ao deletar show', { method: 'DELETE' });
+
+export const removerDuplicados = () =>
+  requisitar(`/shows/duplicados?dj=${djAtivo()}`, 'Erro ao remover duplicados', { method: 'DELETE' });
+
+export function importarCSV(arquivo) {
+  const formData = new FormData();
+  formData.append('arquivo', arquivo);
+  return requisitar(`/shows/importar?dj=${djAtivo()}`, 'Erro ao importar', { method: 'POST', body: formData });
 }
 
-export async function updateShow(id, show) {
-  const payload = { ...show, dj: getDJ() };
-  const res = await fetch(`${BASE_URL}/shows/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.mensagem || 'Erro ao atualizar show'); }
-  return res.json();
-}
-
-export async function deleteShow(id) {
-  const res = await fetch(`${BASE_URL}/shows/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Erro ao deletar show');
-}
-
-export async function getFechamento(mes, ano, imposto = null) {
-  const params = new URLSearchParams({ mes, ano, dj: getDJ() });
+/* ── Fechamento e estatísticas ── */
+export function getFechamento(mes, ano, imposto = null) {
+  const params = new URLSearchParams({ mes, ano, dj: djAtivo() });
   if (imposto) params.append('imposto', imposto);
-  const res = await fetch(`${BASE_URL}/fechamento?${params}`);
-  if (!res.ok) throw new Error('Erro ao buscar fechamento');
-  return res.json();
+  return requisitar(`/fechamento?${params}`, 'Erro ao buscar fechamento');
 }
 
-export async function getStatsContratantes() {
-  const res = await fetch(`${BASE_URL}/stats/contratantes?dj=${getDJ()}`);
-  if (!res.ok) throw new Error('Erro ao buscar stats de contratantes');
-  return res.json();
-}
+export const getStatsContratantes = () => IS_DEMO
+  ? Promise.resolve(getMockStatsContratantes())
+  : requisitar(`/stats/contratantes?dj=${djAtivo()}`, 'Erro ao buscar stats de contratantes');
 
-export async function getStatsLocais() {
-  const res = await fetch(`${BASE_URL}/stats/locais?dj=${getDJ()}`);
-  if (!res.ok) throw new Error('Erro ao buscar stats de locais');
-  return res.json();
-}
+export const getStatsLocais = () => IS_DEMO
+  ? Promise.resolve(getMockStatsLocais())
+  : requisitar(`/stats/locais?dj=${djAtivo()}`, 'Erro ao buscar stats de locais');
 
-export async function getBloqueios() {
-  const res = await fetch(`${BASE_URL}/bloqueios?dj=${getDJ()}`);
-  if (!res.ok) throw new Error('Erro ao buscar bloqueios');
-  return res.json();
-}
+/* ── Bloqueios de agenda ── */
+export const getBloqueios = () =>
+  requisitar(`/bloqueios?dj=${djAtivo()}`, 'Erro ao buscar bloqueios');
 
-export async function createBloqueio(bloqueio) {
-  const res = await fetch(`${BASE_URL}/bloqueios?dj=${getDJ()}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bloqueio),
-  });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.mensagem || 'Erro ao criar bloqueio'); }
-  return res.json();
-}
+export const createBloqueio = bloqueio =>
+  requisitar(`/bloqueios?dj=${djAtivo()}`, 'Erro ao criar bloqueio', comJson('POST', bloqueio));
 
-export async function deleteBloqueio(id) {
-  const res = await fetch(`${BASE_URL}/bloqueios/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Erro ao deletar bloqueio');
-}
+export const deleteBloqueio = id =>
+  requisitar(`/bloqueios/${id}`, 'Erro ao deletar bloqueio', { method: 'DELETE' });
 
-export async function normalizarLocal(de, para) {
-  const res = await fetch(`${BASE_URL}/shows/normalizar-local?dj=${getDJ()}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ de, para }),
-  });
-  if (!res.ok) throw new Error('Erro ao normalizar local');
-  return res.json();
-}
+/* ── Normalização (CRM) ── */
+export const normalizarLocal = (de, para) =>
+  requisitar(`/shows/normalizar-local?dj=${djAtivo()}`, 'Erro ao normalizar local', comJson('PUT', { de, para }));
 
-export async function normalizarContratante(de, para) {
-  const res = await fetch(`${BASE_URL}/shows/normalizar-contratante?dj=${getDJ()}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ de, para }),
-  });
-  if (!res.ok) throw new Error('Erro ao normalizar contratante');
-  return res.json();
-}
+export const normalizarContratante = (de, para) =>
+  requisitar(`/shows/normalizar-contratante?dj=${djAtivo()}`, 'Erro ao normalizar contratante', comJson('PUT', { de, para }));

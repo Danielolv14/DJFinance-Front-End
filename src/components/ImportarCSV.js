@@ -1,11 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDJ } from '../context/DJContext';
-
-const BASE_URL = 'https://djfinance-back-end-production.up.railway.app';
+import { importarCSV, removerDuplicados } from '../services/api';
 
 export default function ImportarCSV({ onImportado }) {
-  const { djConfig } = useDJ();
   const [loading,    setLoading]    = useState(false);
   const [resultado,  setResultado]  = useState(null);
   const [erro,       setErro]       = useState('');
@@ -17,9 +14,7 @@ export default function ImportarCSV({ onImportado }) {
     if (!window.confirm('Remover todos os shows duplicados? Será mantido apenas o primeiro registro de cada show.')) return;
     setLimpando(true); setMsgLimpeza('');
     try {
-      const dj = djConfig?.id || 'DRUDS';
-      const res = await fetch(`${BASE_URL}/shows/duplicados?dj=${dj}`, { method: 'DELETE' });
-      const data = await res.json();
+      const data = await removerDuplicados();
       setMsgLimpeza(data.mensagem);
       onImportado();
     } catch (err) { setMsgLimpeza('Erro: ' + err.message); }
@@ -30,14 +25,8 @@ export default function ImportarCSV({ onImportado }) {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
     setLoading(true); setResultado(null); setErro('');
-    const formData = new FormData();
-    formData.append('arquivo', arquivo);
     try {
-      const dj = djConfig?.id || 'DRUDS';
-      const res = await fetch(`${BASE_URL}/shows/importar?dj=${dj}`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.mensagem || 'Erro ao importar');
-      setResultado(data);
+      setResultado(await importarCSV(arquivo));
       onImportado();
     } catch (err) { setErro(err.message); }
     finally { setLoading(false); inputRef.current.value = ''; }

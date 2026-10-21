@@ -264,3 +264,27 @@ export function getMockFechamento(mes, ano, aliquota) {
     shows,
   };
 }
+
+/* ── Estatísticas do CRM de demonstração (mesma agregação do StatsService do back) ── */
+function agrupar(campo) {
+  const grupos = {};
+  MOCK_SHOWS.forEach(s => {
+    const nome = campo(s);
+    if (nome && nome.trim()) (grupos[nome] = grupos[nome] || []).push(s);
+  });
+  return Object.entries(grupos).map(([nome, lista]) => {
+    const total = lista.reduce((a, s) => a + (s.cache > 0 ? s.cache : 0), 0);
+    const ultima = lista.map(s => s.data).filter(Boolean).sort().pop();
+    const [ano, mes, dia] = ultima ? ultima.split('-').map(Number) : [];
+    return {
+      nome,
+      totalShows: lista.length,
+      totalFaturamento: Math.round(total * 100) / 100,
+      mediaCache: Math.round((total / lista.length) * 100) / 100,
+      ultimoShow: ultima ? `${dia}/${mes}/${ano}` : '—',
+    };
+  }).sort((a, b) => b.totalShows - a.totalShows);
+}
+
+export const getMockStatsContratantes = () => agrupar(s => s.contratante);
+export const getMockStatsLocais       = () => agrupar(s => s.endereco || s.contratante);

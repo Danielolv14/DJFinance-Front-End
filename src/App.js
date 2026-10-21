@@ -12,9 +12,8 @@ import { getShows, getBloqueios } from './services/api';
 import { MOCK_SHOWS, getMockFechamento } from './mockData';
 import { DJProvider, useDJ } from './context/DJContext';
 import useIsMobile from './hooks/useIsMobile';
+import { IS_DEMO } from './utils/demo';
 import './App.css';
-
-const IS_DEMO = new URLSearchParams(window.location.search).has('demo');
 
 const ABAS = [
   { id:'dashboard',  label:'Dashboard',  color:'#4d8fff', shortcut:'F1' },
