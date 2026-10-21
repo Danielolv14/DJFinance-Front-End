@@ -16,3 +16,12 @@ export const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho'
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 export const MESES_ABREV = MESES.map(m => m.slice(0, 3));
+
+/** Valor compacto para gráficos: 1500 → 'R$1.5k', 800 → 'R$800'. */
+export function moedaCurta(v) {
+  if (Math.abs(v) >= 1000) return `R$${(v / 1000).toFixed(1)}k`;
+  return `R$${Math.round(v)}`;
+}
+
+/** Percentual inteiro de num sobre den (0 se den for 0). */
+export const porcentagem = (num, den) => (den > 0 ? Math.round((num / den) * 100) : 0);
